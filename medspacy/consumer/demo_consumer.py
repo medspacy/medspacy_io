@@ -1,6 +1,6 @@
 import spacy
 
-from doc_consumer import DocConsumer, print_rows
+from medspacy.consumer.doc_consumer import DocConsumer, print_rows
 
 nlp = spacy.load("en_core_web_sm")
 

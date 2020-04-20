@@ -43,7 +43,7 @@ base_annotations_string = """<?xml version="1.0" encoding="UTF-8"?>
     </eHOST_Adjudication_Status>
 </annotations>"""
 
-class EHostWriter:
+class EhostWriter:
 
     def __init__(self, annotation_labels=None, annotation_color_mapping=None, context=True, sections=True,
                  span_attributes=None):
