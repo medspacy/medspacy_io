@@ -1,7 +1,7 @@
 import unittest
 from spacy.lang.en import English
-from medspacy.reader import EhostDocReader
-from medspacy.reader import EhostDirReader
+from medspacy_io.reader import EhostDocReader
+from medspacy_io.reader import EhostDirReader
 
 
 class TestEhostReader(unittest.TestCase):

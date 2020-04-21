@@ -1,7 +1,7 @@
-from setuptools import setup
 from codecs import open
 from os import path
-from setuptools.extension import Extension
+
+from setuptools import setup
 
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -16,7 +16,7 @@ def get_version():
 
     """
     try:
-        with open('medspacy/version.py', 'r') as f:
+        with open('medspacy_io/version.py', 'r') as f:
             return f.read().split('\n')[0].split('=')[-1].replace('\'', '').strip()
     except IOError:
         return "0.0.0a1"
@@ -24,20 +24,16 @@ def get_version():
 
 dir_path = path.dirname(path.realpath(__file__))
 include_dirs = [dir_path + "/medspacy", dir_path]
-extensions = [
-    Extension(
-        include_dirs=include_dirs,
-    ),
-]
 
 setup(
-    name='medspacy-io',
-    packages=['medspacy-io'],  # this must be the same as the name above
+    name='medspacy_io',
+    packages=['medspacy_io', 'medspacy_io.reader', 'medspacy_io.writer', 'medspacy_io.consumer'],
+    # this must be the same as the name above
     version=get_version(),
     description='A collection of modules to facilitate reading text from various sources and writing to various sources.',
     author="medSpaCy",
     author_email="medspacy.dev@gmail.com",
-    url='https://github.com/medspacy/read_write',  # use the URL to the github repo
+    url='https://github.com/medspacy/medspacy_io',  # use the URL to the github repo
     keywords=['medspacy', 'reader', 'writer', 'ehost', 'brat', 'xmi', 'io', 'reader', 'writer', 'nlp', 'annotation'],
     long_description=long_description,
     classifiers=[
@@ -62,9 +58,5 @@ setup(
     ],
     test_suite='nose.collector',
     tests_require='nose',
-    data_files=[('test_data', ['tests/data/ehost_test_corpus/config/projectschema.xml',
-                               'tests/data/ehost_test_corpus/corpus/doc1.txt',
-                               'tests/data/ehost_test_corpus/corpus/doc2.txt',
-                               'tests/data/ehost_test_corpus/saved/doc1.txt.knowtator.xml',
-                               'tests/data/ehost_test_corpus/saved/doc2.txt.knowtator.xml'])],
+    include_package_data=True,
 )
