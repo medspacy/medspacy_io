@@ -28,6 +28,7 @@ for whl in wheelhouse/*.whl; do
 done
 
 ls /io/wheelhouse -l
+ls /wheelhouse -l
 # Install packages and test
 for PYBIN in ${PYBINS[@]}; do
     PYBIN="/opt/python/${PYBIN}/bin"
