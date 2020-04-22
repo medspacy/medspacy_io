@@ -27,7 +27,9 @@ for whl in wheelhouse/*.whl; do
     fi
 done
 
-pwd
+echo `pwd`
+
+ls wheelhouse
 
 ls /wheelhouse
 
