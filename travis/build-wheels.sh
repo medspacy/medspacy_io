@@ -28,6 +28,9 @@ for whl in wheelhouse/*.whl; do
 done
 
 pwd
+
+ls /wheelhouse
+
 ls /io/wheelhouse -l
 
 # Install packages and test
