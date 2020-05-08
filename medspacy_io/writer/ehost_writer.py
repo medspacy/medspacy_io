@@ -102,6 +102,7 @@ class EhostWriter:
     def create_schema_file(self, root_dir):
         filepath = os.path.join(root_dir, "config", "projectschema.xml")
         xml = etree.fromstring(base_schema_string.encode())
+        self.add_public_attributes(xml)
         class_defs = xml.find('classDefs')
         for label, rgb in self.annotation_color_mapping.items():
             self.add_classdef(class_defs, label, rgb)
@@ -109,7 +110,7 @@ class EhostWriter:
             f.write(etree.tostring(xml, pretty_print=True))
         # print(f"Saved project config at {outpath}")
 
-    def add_classdef(self, class_defs, label, color):
+    def add_classdef(self, class_defs, label, color, inherit=True):
         class_def = Element('classDef')
         name = Element('Name', )
         name.text = label
@@ -119,24 +120,15 @@ class EhostWriter:
 
         # Add other tags
         sub = Element('InHerit_Public_Attributes')
-        sub.text = 'true'
+        sub.text = str(inherit)
         class_def.append(sub)
 
         sub = Element('Source')
         sub.text = 'eHOST'
         class_def.append(sub)
-
-        # Now add the attributes defined in span_attributes
-        for attr in self.span_attributes:
-            print(attr)
-            attribute_def = Element("attributeDef")
-            attribute_def.append(Element("Name", value=attr))
-            attribute_def.append(Element("defaultValue", value="false"))
-            attribute_def.append(Element("attributeDefOptionDef", value="false"))
-            attribute_def.append(Element("attributeDefOptionDef", value="true"))
-            class_def.append(attribute_def)
-
         class_defs.append(class_def)
+
+
 
     #     < attributeDef >
     #     < Name > is_negated < / Name >
@@ -148,6 +140,31 @@ class EhostWriter:
     #     < attributeDefOptionDef > true < / attributeDefOptionDef >
     #
     # < / attributeDef >
+
+    def add_public_attributes(self, xml):
+        # Now add the attributes defined in span_attributes
+        attribute_defs = xml.find('attributeDefs')
+        for attr in self.span_attributes:
+            attribute_def = Element("attributeDef")
+            name = Element("Name")
+            name.text = attr
+            attribute_def.append(name)
+            default_value = Element("defaultValue")
+            default_value.text = "false"
+            attribute_def.append(default_value)
+            for value in ["false", "true"]:
+                option_def = Element("attributeDefOptionDef")
+                option_def.text = value
+                attribute_def.append(option_def)
+
+            for name in ["is_Linked_to_UMLS_CUICode_and_CUILabel",
+                         "is_Linked_to_UMLS_CUICode",
+                         "is_Linked_to_UMLS_CUILabel"]:
+                sub_elem = Element(name)
+                sub_elem.text = "false"
+                attribute_def.append(sub_elem)
+
+            attribute_defs.append(attribute_def)
 
     def add_rgb_tags(self, class_def, rgb):
         # Add RGB values
@@ -170,9 +187,11 @@ class EhostWriter:
             slot_mention_ids = []
 
             for attr in self.span_attributes:
-                self.add_string_slot_mention(ent, attr, xml, self._i)
-                slot_mention_ids.append(self._i)
-                self._i += 1
+                if getattr(ent._, attr) == True:
+                    self.add_string_slot_mention(ent, attr, xml, self._i)
+                    slot_mention_ids.append(self._i)
+                    self._i += 1
+
 
 
             if ent.label_ not in self.annotation_color_mapping:
@@ -239,14 +258,14 @@ class EhostWriter:
         mention = Element('classMention', id=f'EHOST_Instance_{i}')
 
         mention_class = Element('mentionClass', id=label)
-        mention_class.text = span.text
+        # mention_class.text = span.text
         mention.append(mention_class)
 
         xml.append(mention)
 
         # Add references to the slot mentions which represent various attributes
         for slot_mention_id in slot_mention_ids:
-            slot_mention_ref = Element("hasSlotMention", id=f"EHOST_Instance_{self._i}")
+            slot_mention_ref = Element("hasSlotMention", id=f"EHOST_Instance_{slot_mention_id}")
             mention.append(slot_mention_ref)
 
     def add_string_slot_mention(self, span, attr, xml, i):
@@ -255,8 +274,9 @@ class EhostWriter:
         slot_mention = Element("stringSlotMention", id=f'EHOST_Instance_{i}')
         mention_slot = Element("mentionSlot", id=attr)
         slot_mention.append(mention_slot)
-        mention_slot_value = Element("mentionSlotValue", value=value)
+        mention_slot_value = Element("stringSlotMentionValue", value=value)
         slot_mention.append(mention_slot_value)
+        print(slot_mention)
 
         xml.append(slot_mention)
 
