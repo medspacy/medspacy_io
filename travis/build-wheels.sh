@@ -17,11 +17,10 @@ for PYBIN in ${PYBINS[@]};do
   "${PYBIN}/python" -m spacy download en
   "${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/
 done
-NORM_PROJECT_NAME=${PROJECT_NAME/_/-}
+
 # Bundle external shared libraries into the wheels
 for whl in /io/wheelhouse/*.whl; do
-    norm_whl=${whl/_/-}
-    if [[ $norm_whl == /io/wheelhouse/${NORM_PROJECT_NAME}* ]]; then
+    if [[ $whl == /io/wheelhouse/${PROJECT_NAME}* ]]; then
       if [[ $whl != *none-any.whl ]]; then
 #       if not an os-dependent build, the following repair will complain
         auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
@@ -29,12 +28,6 @@ for whl in /io/wheelhouse/*.whl; do
     else
       rm $whl
     fi
-done
-
-#unfortunately, the project name was changed in history, which causes travis deploy rejection. Has to be fixed ugly.
-for whl in /io/wheelhouse/*.*; do
-  norm_whl=${whl/_/-}
-  mv $whl $norm_whl
 done
 
 echo `pwd`

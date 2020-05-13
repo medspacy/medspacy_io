@@ -5,7 +5,7 @@ os:
   - linux
 env:
   global:
-    - PROJECT_NAME=medspacy-io
+    - PROJECT_NAME=medspacy_io
     - PYPI_REPO_NAME=medspacy-io
     - PYPI_LOGIN=__token__
     - PY35="cp35-cp35m"
@@ -61,12 +61,9 @@ deploy:
       tags: true
       condition: "$DEPLOY_TEST == false"
 
-
-
   # deploy develop to test.pypi.org
   - provider: script
     script: /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} --repository-url https://test.pypi.org/legacy/ --skip-existing wheelhouse/*
     on:
-      repo: ${PYPI_REPO_NAME}
       tags: true
       condition: "$DEPLOY_TEST == true"
