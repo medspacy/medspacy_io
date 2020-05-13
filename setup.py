@@ -26,7 +26,7 @@ dir_path = path.dirname(path.realpath(__file__))
 include_dirs = [dir_path + "/medspacy", dir_path]
 
 setup(
-    name='medspacy-io',
+    name='medspacy_io',
     packages=['medspacy_io', 'medspacy_io.reader', 'medspacy_io.writer', 'medspacy_io.consumer'],
     # this must be the same as the name above
     version=get_version(),

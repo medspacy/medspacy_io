@@ -17,10 +17,13 @@ for PYBIN in ${PYBINS[@]};do
   "${PYBIN}/python" -m spacy download en
   "${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/
 done
-
+NORM_PROJECT_NAME=${PROJECT_NAME/_/}
+NORM_PROJECT_NAME=${NORM_PROJECT_NAME/-/}
 # Bundle external shared libraries into the wheels
 for whl in /io/wheelhouse/*.whl; do
-    if [[ $whl == /io/wheelhouse/${PROJECT_NAME}* ]]; then
+    norm_whl=${whl/_/}
+    norm_whl=${norm_whl/-/}
+    if [[ $norm_whl == /io/wheelhouse/${NORM_PROJECT_NAME}* ]]; then
       if [[ $whl != *none-any.whl ]]; then
 #       if not an os-dependent build, the following repair will complain
         auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
