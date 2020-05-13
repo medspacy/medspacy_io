@@ -60,6 +60,7 @@ deploy:
     skip_cleanup: true
     on:
       tags: true
+      all_branches: true
       condition: "$DEPLOY_TEST == false"
 
   # deploy develop to test.pypi.org, we want to reuse the customized built from build-wheels, so not using default travis pypi setting.
