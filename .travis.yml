@@ -53,7 +53,7 @@ script:
 
 before_deploy:
   - provider: script
-    script: cd io && ls -l &&  /opt/python/${TRAVIS_PY36}/bin/python -m setup.py sdist
+    script: pwd && cd /io && ls -l &&  /opt/python/${TRAVIS_PY36}/bin/python -m setup.py sdist
     on:
       tags: false
       condition: "$DEPLOY_TEST == true"
