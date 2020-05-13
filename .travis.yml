@@ -55,7 +55,7 @@ script:
 deploy:
   # deploy develop to pypi.org
   - provider: script
-    script: ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} wheelhouse/*
+    script: ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} --skip-existing wheelhouse/*
     on:
       repo: ${PYPI_REPO_NAME}
       tags: true
@@ -65,7 +65,7 @@ deploy:
 
   # deploy develop to test.pypi.org
   - provider: script
-    script: /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} --repository-url https://test.pypi.org/legacy/ wheelhouse/*
+    script: /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} --repository-url https://test.pypi.org/legacy/ --skip-existing wheelhouse/*
     on:
       repo: ${PYPI_REPO_NAME}
       tags: true
