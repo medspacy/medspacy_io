@@ -51,12 +51,7 @@ script:
 #  - docker run --name "aaa37" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY37}"
 #  - docker run --name "aaa38" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY38}"
 
-before_deploy:
-  - provider: script
-    script: pwd && cd /io && ls -l
-    on:
-      tags: false
-      condition: "$DEPLOY_TEST == true"
+before_deploy: "pwd && cd /io && ls -l"
 
 deploy:
   # deploy develop to pypi.org
