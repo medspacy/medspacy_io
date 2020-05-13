@@ -1,88 +1,25 @@
 language: python
-notifications:
-  email: false
-os:
-  - linux
+jobs:
+  include:
+  - services: docker
+  - os: osx
+    language: shell
+  - os: windows
+    language: shell
+    before_install:
+    - choco install python --version 3.8.0
+    - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
 env:
   global:
-    - secure: P6c1spkY+mxyZKX+OIaUzcoJLLfZCxBEj6e/ZVThO6u4IGOoFajceQ/iXsaXLtoBhSqkbVMNs1YWqGFD8MLhBvrTY3DRQAKvavT38Z1tM5Vd91KzSgZkNRbNMswRu09STop2Eb0rl9iK81i+Hgsq3KTXtbOMrMCqJtpKOlWasvF5ZrMmwS6DXyIPW4ow671O4s2yKtkfXt3NGiX+GBlTE4ed6BJcrZ072HVR2uCg4vb1kPB5CH3Mz+r7bbVU7EY8QsUke20ZtHX1c3NErN5RSHrbLKujIeo21gdntv8nVldVX5iYMbzStqJyBJ8tmesstv3XUfMkAHnB0CRdVLm1O2fVMDnYehEWxbtGbBBpcrOG/T3U4FPKffB3Ao0uIh+k2uqPBdP4mEcqd6rEo7PdSlC/p6zNnw+JpqdQ0utHwBhIbeELCi1pytKRbHI4G+7UlJZE+Tmw/BHnPDzQs9HjZVyzDjVarfS2xpdhrogGJlCkpxz3eXWN8WbsTdUExZaiFGeZ41TgIyaGaEkrMXA3iLJRzI3VfUAueSUt1VVq8KKHLa1qKt2vn0Dx/3oXTTRz4Nl9Z5sayi68XccVbyjbvv/0SDGQAvd/7/ZhlidW9xPbJtjc6CG6UWRTRkm6bSJQhQ1lq1VsYmPtzCqXqIVNXKINS/j3CvvKla0PejQp9U4=
-    - secure: 22S/8zpvjldEjolbeMBLnq/0iXBKMVjFVqVYVEzZbBgdvnbhTWwa9B9mLVHhOwnl8RNFB2P0qTI+5pz8SqL9tf4G+hw/h0bG7OW8cSnMwyp07yNbZrn/9cxzrWhlQn3mLxeOFiNDM1eZ5BmTFJca3roF4KrZ3OVq59ibmCAhe8KY+TqOuf5600nGmDHtVtEQxApyIUUm9VQAKrj1Y0ihJGLF5RLSXODKXTGn2nEfRxrDDf2JYgZWrQ9cCkRC/NpNGpaaXyPC8SXp1UtPAKsDrfVjnh5iejMRLxWTy7oFkrM3DP8wCBCGeiVTyF02mOR0U5ykzd8ydkBeWgSQx1fCXKHXXyzzkqgLvYcnpfPY3UEXqjEO1OnWDsA8rbzgyvQzvuWDP35Yt221t6bo7uqcySMZl1QA+XEnXFVgAroY//7Owy5PNlX5HCWIl0xRBktBNfsZIy/Ff56eqglqL8nE5V4cqISqF5FYQwsO+kQWBFynQit2uUvphEc6ptJPng6qeOtDEd8roo5YcapfuVzphNzwQh713B8cfnAwFrgkfgOo52Ok1Qtn2/4t/97XghFe1Ui9oXgdQ++VZ4KiJgA/dlmXSTyWUI2+nTxSOjNVlv0VZodza85wF7dDFbLLYtziCqx+g+LQdaJFB3ww/ro/W9yLM9ze89xlxDfdR92Rz0M=
-    - secure: oGZRRq2qRwO8UDimsfTwxiAhWYDKM/tR81AmTUaypra6qKJ/fU6dWjYrfQ7tw4BvRyR7wOCr2dV0J2D20G1e/QbtVASJzyU4crNcmz8p7Xe1ClVn6dPOEtp9cLjif4A0tMGZOxhEnb4gvv+yXKPUQRcSC3vgfPKVbHQJQuFGa87VpmXdwsKIIMNmq35rrjHdMbAhAsRaLYfXdeJynSvsshrmG1B5AvcIIQgTIHl+524500caX852O88vzzbyidP2eWTWz4ea3p+fpNtUahLHiQPi+oLjmqECbVdMi92qEuzySnIhjcxdItgwSa2IHCfStW+yPxvrcH7UWtOcjX9lM5+gPYsi0t6l6wuVObPVqigY9qCOfMhQtw2DZN9qRoVwQQeC9sGmyivK+hGYXSahtuGF+9C3AVT7SIsgRGqVWPh73r+laMCRnSfi1+hyBy7gKTsboT5hx+rFSVAzuNCoXooJTrMeM1QQEGOgfHNPrYR8idUnLRq2xMtsAgSN2NU0zQxDJV+CJFEZRq9Ly0JQCylLFtMRUDfH16jb6VMwtdkvfpMoDslkZ9me5p126J8vdSlgr7ceH1sM3wul8uILFT4ZVPNeVRyqFP1OFNQpa3YA+sXMzMzshEVDw4NVdolQcMoBC83UkzSsLJQUnOUEVh1mhuFdyVnQuWykndPS7Ac=
-    - PROJECT_NAME=medspacy_io
-    - GITHUB_REPO_NAME=medspacy_io
-    - CONDA_PKG_NAME_PY=medspacy-io
-    - PYPI_LOGIN=jianlins
-    - PY35="cp35-cp35m"
-    - PY36="cp36-cp36m"
-    - PY37="cp37-cp37m"
-    - PY38="cp38-cp38"
-    - TRAVIS_PY36=3.6.7
-    - TRAVIS_PY37=3.7
-    - DEPLOY_TEST=true
-    - secure: "N5VeOo+j9P8PEC2Qh/nBYniccWvrrzRw/AhR131c8qK4C6ZgUKGNa8zIfSp6syi0mQ16Z7rf57bsaPrcl6CXbRzUYaNs71xJexvqZHxs1FZXWqNDOdrM1VCuSE8msxzYhz8Gbt37KCJ1DIwFnZHH0860fTmLTmbjGSg/IK2AKH9Dewm81TkEzM6Yzu5saKasbfoR3wY0xsykubNFRJxEB4rseuZhjSfySfYHjiskjXFEfBIYHL6TjdnZcDdtuPnDuk9S0koB/enlGMqMhsKTe1ApZGvZcuYhmPhRydWxU2bjvwkkRcQEdTwOtiUBvi3D8i1FzNJoOWRWhDI5oAz81/bUAMYJSrZ1NpZ4JOOsD/HNfSO9r0DBJdEZAlKJ8uAJYa5IwJMAylSly+DL31k4VcG1unvHDDXMFG52rCLGzdtf/b7oVVh05lZxcvVFio31bfvjjZY8ugLOOywnwRyVgqWGNvJIld1PUGIjyyXKKxpFh7J8jOF8KsxfxU6l1dGEWRMnjTEPYdF1P1t+lOv8rFxRPYR1WIpZte7sGu2NSrJHGynWtx2uJOqMYFVAF3ZqXYtQ3QqbQTZAOZlzKCBXh+y4+lze8DKeGKc7TOtwC00R2E4A+KdxWG1OgePwrlxDUPz4pWYvS+4LLuxrkHgpMmY1fBLpAaXLQeSX1e+vcfg="
-
-
-# encrypt PYPI_PWD
-matrix:
-  include:
-    - sudo: required
-      services:
-        - docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
-        PLAT=manylinux1_x86_64
-    - sudo: required
-      services:
-        - docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
-        PRE_CMD=linux32
-        PLAT=manylinux1_i686
-    - sudo: required
-      services:
-        - docker
-      env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
-        PLAT=manylinux2010_x86_64
-
+  - secure: Jmt9G6ySp+DZAy0mIkYiw5pruDRlUKOM7IALaCjL784cPNpp+9tQade0qoR2F15ZNDzbaAvvRRMI/dD2COiem9jSVN6cQLP+7m3xnx/TS7aGlOASNOqAD9ztbXju3LOfs6QjJJjRVrhzfqKDOF6sNghyX6WErecBy1E53dl91W/RK+BlqmE+751ad47Jh+/8mjK+3nwwdcCYvq+ql8ozrklAmr29Y1ibTsin8B8AQRtaihgmDJlliU989TnH7vWxygE729Bm5VEwY+3GJE0CBsjrQWUiRumBC5liY5tO8v4950pwP8/9cgT8YWBTqGr5Y8L7n772Yss7zt3yBJ9L+9SfWfGcWackZdB1nzUidHt3FkagtJ6ROP5v9yrq8PP4xS8/DPQGKH3EElUMNDCmJ7E1cFx4v73/VdhfExNkhjQnpoLy0jGL4zuEZ0zG3yADRPuMl7l5J+fcfRghP3atDcvD/enmo9kovpu1bAC91MaEHMuKQB3yO/eLtx8sTH2XD9WS9kRN9KdV4b0D6QGbE30JPbwxJspES5fm71HcTz7yD7/WLFSW1pPYJLPoiVpQlsKcZKe2AbnNrLeXBNNOxHR1KQmekowfFu19ylser3B5WDZKNBT5XlrZZg9JzcdMngcuvla0Zjl/youM4+8UUliJQr0K2htUpTI+eXPnv9E=
+  - DEPLOY=false
 install:
-  - /opt/python/${TRAVIS_PY36}/bin/pip install twine
-  - /opt/python/${TRAVIS_PY36}/bin/pip install -r dev-requirements.txt
-  - docker pull $DOCKER_IMAGE
-
+- python3 -m pip install -r dev-requirements.txt
 script:
-  - chmod 775 travis/build-wheels.sh
-  - docker run --name "aaa36" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY36}"
-  - docker run --name "aaa37" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY37}"
-  - docker run --name "aaa38" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY38}"
-
-
-
-
-deploy:
-  # deploy develop to pypi.org
-  - provider: script
-    script: ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${PYPI_PWD} wheelhouse/${PROJECT_NAME}*${PLAT}*
-    on:
-      repo: ${GITHUB_REPO_NAME}
-      tags: true
-      condition: "$TRAVIS_OS_NAME == linux && $DEPLOY_TEST == false"
-
-  - provider: script
-    script: /opt/python/${TRAVIS_PY36}/bin/python setup.py sdist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${PYPI_PWD} dist/${PROJECT_NAME}*tar.gz
-    on:
-      repo: ${GITHUB_REPO_NAME}
-      tags: true
-      condition: "$PLAT == manylinux1_x86_64 && $TRAVIS_OS_NAME == linux && $DEPLOY_TEST == false"
-
-  # deploy develop to test.pypi.org
-  - provider: script
-    script: /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${PYPI_PWD} --repository-url https://test.pypi.org/legacy/ wheelhouse/${PROJECT_NAME}*${PLAT}*
-    on:
-      repo: ${GITHUB_REPO_NAME}
-      tags: true
-      condition: "$TRAVIS_OS_NAME == linux && $DEPLOY_TEST == true"
-
-  - provider: script
-    script: /opt/python/${TRAVIS_PY36}/bin/python setup.py sdist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${PYPI_PWD} --repository-url https://test.pypi.org/legacy/ dist/${PROJECT_NAME}*tar.gz
-    on:
-      repo: ${GITHUB_REPO_NAME}
-      tags: true
-      condition: "$PLAT == manylinux1_x86_64 && $TRAVIS_OS_NAME == linux && $DEPLOY_TEST == true"
+- python3 -m cibuildwheel --output-dir wheelhouse
+after_success:
+- |-
+  if [[ $TRAVIS_TAG -a DEPLOY ]]; then
+    python3 -m pip install twine
+    python3 -m twine upload wheelhouse/*.whl
+  fi
