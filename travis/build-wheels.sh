@@ -42,3 +42,4 @@ for PYBIN in ${PYBINS[@]}; do
     "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/wheelhouse
 #    (cd "$HOME";ls -l; "${PYBIN}/nosetests" ${PROJECT_NAME})
 done
+chmod 777 /io/wheelhouse/*.*

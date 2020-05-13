@@ -61,9 +61,17 @@ deploy:
       tags: true
       condition: "$DEPLOY_TEST == false"
 
-  # deploy develop to test.pypi.org
-  - provider: script
-    script: echo "deploying..." && ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} --repository-url https://test.pypi.org/legacy/ -p ${TWINE_PASSWORD} --skip-existing wheelhouse/*
+#  # deploy develop to test.pypi.org
+#  - provider: script
+#    script: echo "deploying..." && ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} --repository-url https://test.pypi.org/legacy/ -p ${TWINE_PASSWORD} --skip-existing wheelhouse/*
+#    on:
+#      tags: false
+#      condition: "$DEPLOY_TEST == true"
+
+  - provider: testpypi
+    user: "__token__"
+    password: ${TWINE_PASSWORD}
+    skip_cleanup: true
     on:
       tags: false
       condition: "$DEPLOY_TEST == true"
