@@ -60,22 +60,23 @@ deploy:
       tags: true
       condition: "$DEPLOY_TEST == false"
 
-  - provider: pypi
-    user: "__token__"
-    server: https://test.pypi.org/legacy/
-    password:
-      secure: "mggGGk6YwHNdswBSPiD0av/ZqC4/FEm3YQYN5ApNrTfn9MkKh28WEvSCl7KO9HxtW6rW8jZuZBa3FynG6xLYZ6ZJepMtpgQkkvpGr25ZC0d7UapF5Eh5mH/qMbgysBmc3AEXF3Y/NWZTdgyAg1khsp3mwUhXUu5YVS0Wx6Z2idb+L7MiAbV1WO7wSzTNf8pGZ2iw9JOqOAjkOseVBW0fdGR8p1ObFO9VTTJYD3aPyVfxdswG9UjIMS+3QamGiy6FK7FJrd1y0zKLxOSZ1R+D3lhsAChOz56Wcdzp2ynEUwtvlQlgNM/DK4a2wTkKimtAvYjqVyP0hXJ3X1kiaUafWB74ANicS5yRaTZpowERQlZywQqVFZy4d5+EZIt+Omvc235RQt3ychgHyza1oPlgcmxTbF5LDgfHDg0OY890CVfVxtJorIYRynR60A0RRjM5COFP536X78tGClHZlSCiNueZo6JEGfba+ckIpRsGhhnVxIpo+nKBqGLnNul1i1AGJgi9Ype9+iRnRYxLsXVggVAiRitwDh3R7qte1Qfr4OyPu9fRqPGXioF+0rpUw4Gqb5PGL1aBy1lw9KrHazKdRkuhHiSnw88V8rql7Q/dfyURUP1csCqfiVdVIeUp1wj0y901N4+WpTgJE4FZK/ZnLmNSmvpz7GPI7yserAiDX5o="
-    skip_cleanup: true
-    skip_existing: true
-    verbose: true
-    on:
-      tags: false
-      condition: "$DEPLOY_TEST == true"
-
-#  # deploy develop to test.pypi.org
-#  - provider: script
-#    script: echo "deploying..." && ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} --repository-url https://test.pypi.org/legacy/ -p ${TWINE_PASSWORD} --skip-existing wheelhouse/*
+#  - provider: pypi
+#    user: "__token__"
+#    server: https://test.pypi.org/legacy/
+#    password:
+#      secure: "mggGGk6YwHNdswBSPiD0av/ZqC4/FEm3YQYN5ApNrTfn9MkKh28WEvSCl7KO9HxtW6rW8jZuZBa3FynG6xLYZ6ZJepMtpgQkkvpGr25ZC0d7UapF5Eh5mH/qMbgysBmc3AEXF3Y/NWZTdgyAg1khsp3mwUhXUu5YVS0Wx6Z2idb+L7MiAbV1WO7wSzTNf8pGZ2iw9JOqOAjkOseVBW0fdGR8p1ObFO9VTTJYD3aPyVfxdswG9UjIMS+3QamGiy6FK7FJrd1y0zKLxOSZ1R+D3lhsAChOz56Wcdzp2ynEUwtvlQlgNM/DK4a2wTkKimtAvYjqVyP0hXJ3X1kiaUafWB74ANicS5yRaTZpowERQlZywQqVFZy4d5+EZIt+Omvc235RQt3ychgHyza1oPlgcmxTbF5LDgfHDg0OY890CVfVxtJorIYRynR60A0RRjM5COFP536X78tGClHZlSCiNueZo6JEGfba+ckIpRsGhhnVxIpo+nKBqGLnNul1i1AGJgi9Ype9+iRnRYxLsXVggVAiRitwDh3R7qte1Qfr4OyPu9fRqPGXioF+0rpUw4Gqb5PGL1aBy1lw9KrHazKdRkuhHiSnw88V8rql7Q/dfyURUP1csCqfiVdVIeUp1wj0y901N4+WpTgJE4FZK/ZnLmNSmvpz7GPI7yserAiDX5o="
+#    skip_cleanup: true
+#    skip_existing: true
+#    verbose: true
 #    on:
 #      tags: false
 #      condition: "$DEPLOY_TEST == true"
+
+  # deploy develop to test.pypi.org
+  - provider: script
+    script: echo "deploying..." && ls dist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} --repository-url https://test.pypi.org/legacy/ -p ${TWINE_PASSWORD} --skip-existing --verobse dist/*
+    skip_cleanup: true
+    on:
+      tags: false
+      condition: "$DEPLOY_TEST == true"
 
