@@ -15,7 +15,7 @@ for PYBIN in ${PYBINS[@]};do
   echo "${PYBIN}"
   "${PYBIN}/pip" install -q -r /io/dev-requirements.txt
   "${PYBIN}/python" -m spacy download en
-  "${PYBIN}/pip" wheel /io/ -w wheelhouse/
+  "${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/
 done
 
 # Bundle external shared libraries into the wheels
