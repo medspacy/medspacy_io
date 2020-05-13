@@ -21,7 +21,9 @@ done
 # Bundle external shared libraries into the wheels
 for whl in /io/wheelhouse/*.whl; do
     if [[ $whl == /io/wheelhouse/${PROJECT_NAME}* ]]; then
-      auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+      if [[ $whl != *none-any.whl ]]; then
+        auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+      fi
     else
       rm $whl
     fi
