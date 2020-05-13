@@ -29,11 +29,11 @@ for whl in /io/dist/*.whl; do
       rm $whl
     fi
 done
-
+echo 'current location: '
 echo `pwd`
 
 ls / -l
-
+ls /io/ -l
 ls /io/dist -l
 
 # Install packages and test
@@ -42,4 +42,4 @@ for PYBIN in ${PYBINS[@]}; do
     "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/dist
 #    (cd "$HOME";ls -l; "${PYBIN}/nosetests" ${PROJECT_NAME})
 done
-chmod 777 /io/dist/*.*
+chmod -R 777 /io/
