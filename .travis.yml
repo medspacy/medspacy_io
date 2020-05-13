@@ -5,7 +5,7 @@ os:
   - linux
 env:
   global:
-    - PROJECT_NAME=medspacy_io
+    - PROJECT_NAME=medspacy-io
     - PYPI_REPO_NAME=medspacy-io
     - PYPI_LOGIN=__token__
     - PY35="cp35-cp35m"
@@ -49,7 +49,6 @@ script:
   - docker run --name "aaa36" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY36}"
   - docker run --name "aaa37" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY37}"
   - docker run --name "aaa38" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY38}"
-
 
 
 
