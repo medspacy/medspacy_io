@@ -74,7 +74,7 @@ deploy:
 
   # deploy develop to test.pypi.org
   - provider: script
-    script: echo "deploying..." && ls dist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} --repository-url https://test.pypi.org/legacy/ -p ${TWINE_PASSWORD} --skip-existing --verobse dist/*
+    script: echo "deploying..." && ls dist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload  --skip-existing --verobse -u ${PYPI_LOGIN} --repository-url https://test.pypi.org/legacy/ -p ${TWINE_PASSWORD} dist/*
     skip_cleanup: true
     on:
       tags: false
