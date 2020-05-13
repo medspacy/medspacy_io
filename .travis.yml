@@ -14,8 +14,8 @@ env:
     - PY38="cp38-cp38"
     - TRAVIS_PY36=3.6.7
     - TRAVIS_PY37=3.7
-    - DEPLOY_TEST=true
-    - secure: Jmt9G6ySp+DZAy0mIkYiw5pruDRlUKOM7IALaCjL784cPNpp+9tQade0qoR2F15ZNDzbaAvvRRMI/dD2COiem9jSVN6cQLP+7m3xnx/TS7aGlOASNOqAD9ztbXju3LOfs6QjJJjRVrhzfqKDOF6sNghyX6WErecBy1E53dl91W/RK+BlqmE+751ad47Jh+/8mjK+3nwwdcCYvq+ql8ozrklAmr29Y1ibTsin8B8AQRtaihgmDJlliU989TnH7vWxygE729Bm5VEwY+3GJE0CBsjrQWUiRumBC5liY5tO8v4950pwP8/9cgT8YWBTqGr5Y8L7n772Yss7zt3yBJ9L+9SfWfGcWackZdB1nzUidHt3FkagtJ6ROP5v9yrq8PP4xS8/DPQGKH3EElUMNDCmJ7E1cFx4v73/VdhfExNkhjQnpoLy0jGL4zuEZ0zG3yADRPuMl7l5J+fcfRghP3atDcvD/enmo9kovpu1bAC91MaEHMuKQB3yO/eLtx8sTH2XD9WS9kRN9KdV4b0D6QGbE30JPbwxJspES5fm71HcTz7yD7/WLFSW1pPYJLPoiVpQlsKcZKe2AbnNrLeXBNNOxHR1KQmekowfFu19ylser3B5WDZKNBT5XlrZZg9JzcdMngcuvla0Zjl/youM4+8UUliJQr0K2htUpTI+eXPnv9E=
+    - DEPLOY_TEST=false
+    - secure: "kzQuHUMjjGvwL4bFcwywA28ed4wBRi+kx8UtogjffNrYdtuUped0eNRyKXZWl3mPDuqx8DXvkcMF795t2u9UXJtC137P9yX5CoMU14f4Zvv4nZuh082InyKSD036K+0jcKxmJ++sfVEi/X70f2oFW0rAf5rHD2veT4SW5Hxtb9dVaiJVpEXdT1PSXJ5MW2QdNxa/siIuK4uTNBMM0h/hY9i/wydDYgdh0+33cYXB7+X7tEaCIxkM8X1IiUYbzWgkd9StVN7koPxHc0x9c5y0VEd5ESAlHp9wHUr/tHk+OwRQHZXMEsMZrZjbFwNT5vR4vMAKqD5wTr3h4W+dWaihdG/hAU1eeXxh8vyvKwNN6fvE7jehr5z3fbBoGAh/Rhhl4u/kl3+xSqiO1kM2BVqNFcudivhDqkEnOuwfIhaV+bPshmIv61yKeCQiRKJ/JsGCMloBpD7/5pHiwZ0/zCDi6scwzNYVx1P0gvbIzjONXiuImd6zBdPN9/QYa9KErnZIh5tHFRblR0ARH5ws+euogKYw5za6rlyeqK1DWPpQCjTtsElNdtVa/qSG/GSzsfss4CY1a04Qktug+5CkdOKGiiJ2PQsvE9yL01CoayNNgcLZStR/IhLzSG+Li+3Px0ZMey38lK+ZTVJF9ScShfNtf6xBx8VZ2XJgIovCD6BadXw="
     - secure: "GWJ0dFS9amrzso40L+j6Wf5ovhD/l5x9PydgAr/AGOdkVx1/V4X+qpCzrvdal5CYDDBqo+eH5HUbWe7DSDPNlzp+GV3xVA6BL8uC6Eic3RkL/zwuVf1EHKOP6NACAE1i78MiZnPDXTwjLJKh+9XSMsZslWTQ8Bkas+V4XfG044BJb37gZorcFuIPfwNwt4sX1CnY58C0JUXEW3ib0Aa65c2Zs/ZFx2B1hL/AfyLZdkS9YG6bcaFgrJEuVy/6yZfagkFp3NZE4mU8OQHu39Md2UGiUBhw611Ktg4dndvHJDuutPukafh6/6wmK6yV6SnUznLuBGpAqyp7r6e9HrqS/mZRRDS3FRfer8sfh44i9pvznDa/TXLbsdKmq3AuwcVCi1NjDokFgWLmLyDAVdMqQunSFfGGDHMTjuW0Y8t7R28Wbi0zvaGpo15EPnNDDg9jiGseYx5Qq8c66P+qGUCANNocSZkVhEPfNA9l7rSjZh7W39gHz1vf+/xSFnXwlC4/s5aA5Oe6FypZGpbc+Uom8uTKmooK66jOMjn+1RyJkIv/FE/PQjcEFKmIpdr8wx/3XShaSwPfkzysb5G5qVGxmaePhyYA31xfrGxyvIjxWaNmVszK2nuocuO+iS/x+KXL77W9U6npWigcKt1HYjrygT0mdu3oO2h44CVaK24vyR8="
 
 
@@ -48,15 +48,16 @@ install:
 script:
   - chmod 775 travis/build-wheels.sh
   - docker run --name "aaa36" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY36}"
-#  - docker run --name "aaa37" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY37}"
-#  - docker run --name "aaa38" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY38}"
+  - docker run --name "aaa37" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY37}"
+  - docker run --name "aaa38" -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /bin/sh -c "/io/travis/build-wheels.sh ${PLAT} ${PROJECT_NAME} ${PY38}"
 
 before_deploy: "/opt/python/${TRAVIS_PY36}/bin/python setup.py sdist"
 
 deploy:
   # deploy develop to pypi.org
   - provider: script
-    script: echo "deploying..." && ls dist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} --skip-existing wheelhouse/*
+    script: echo "deploying..." && ls dist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${PYPI_API_TOKEN} --skip-existing dist/*
+    skip_cleanup: true
     on:
       tags: true
       condition: "$DEPLOY_TEST == false"
@@ -66,6 +67,6 @@ deploy:
     script: echo "deploying..." && ls dist && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload --skip-existing --verbose --repository-url https://test.pypi.org/legacy/ -u ${PYPI_LOGIN} -p ${TEST_API_TOKEN} dist/*
     skip_cleanup: true
     on:
-      tags: false
+      tags: true
       condition: "$DEPLOY_TEST == true"
 
