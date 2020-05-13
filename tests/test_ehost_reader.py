@@ -13,39 +13,39 @@ class TestEhostReader(unittest.TestCase):
 
     def test_parse_to_dicts(self):
         ereader = EhostDocReader(nlp=English())
-        spans, classes, attributes = ereader.parse_to_dicts('data/ehost_test_corpus/saved/doc1.txt.knowtator.xml')
+        spans, classes, attributes = ereader.parse_to_dicts('tests/data/ehost_test_corpus/saved/doc1.txt.knowtator.xml')
         assert (len(spans) == 7)
         assert (len(classes) == 7)
         assert (len(attributes) == 6)
 
     def test_set_attributes(self):
-        EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
+        EhostDocReader(nlp=English(), schema_file='tests/data/ehost_test_corpus/config/projectschema.xml')
         nlp = English()
         doc = nlp('test status attribute')
         assert (hasattr(doc[1:2]._, 'status'))
         assert (doc[1:2]._.status == 'present')
 
     def test_read(self):
-        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
-        doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
+        ereader = EhostDocReader(nlp=English(), schema_file='tests/data/ehost_test_corpus/config/projectschema.xml')
+        doc = ereader.read('tests/data/ehost_test_corpus/corpus/doc1.txt')
         self.eval(doc)
 
     def test_read_overlap(self):
-        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=English(), schema_file='tests/data/ehost_test_corpus/config/projectschema.xml',
                                  support_overlap=True)
-        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
+        doc = ereader.read('tests/data/ehost_test_corpus2/corpus/doc1.txt')
         assert (len(doc._.concepts) == 7)
         assert (len(doc._.concepts['Incision_and_Drainage']) == 2)
-        doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
+        doc = ereader.read('tests/data/ehost_test_corpus2/corpus/doc2.txt')
         assert (len(doc._.concepts) == 7)
         assert (len(doc._.concepts['Exclusions']) == 2)
         assert (len(doc._.concepts['Doc_Level_Purulence_Assessment']) == 2)
 
     def test_dir_reader(self):
-        dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
+        dir_reader = EhostDirReader(txt_dir='tests/data/ehost_test_corpus/',
                                     nlp=English(),
                                     docReaderClass=EhostDocReader, recursive=True,
-                                    schema_file='data/ehost_test_corpus/config/projectschema.xml')
+                                    schema_file='tests/data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read()
         assert (len(docs) == 2)
         for doc in docs:

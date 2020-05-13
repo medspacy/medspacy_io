@@ -185,7 +185,7 @@ class BaseDirReader:
             dir = Path(dir)
         if not dir.exists() or not dir.is_dir():
             if raise_error:
-                raise NotADirectoryError(dir)
+                raise NotADirectoryError(dir.absolute())
             else:
                 return None
         return dir
