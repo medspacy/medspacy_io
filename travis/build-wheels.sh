@@ -15,15 +15,15 @@ for PYBIN in ${PYBINS[@]};do
   echo "${PYBIN}"
   "${PYBIN}/pip" install -q -r /io/dev-requirements.txt
   "${PYBIN}/python" -m spacy download en
-  "${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/
+  "${PYBIN}/pip" wheel /io/ -w /io/dist/
 done
 
 # Bundle external shared libraries into the wheels
-for whl in /io/wheelhouse/*.whl; do
-    if [[ $whl == /io/wheelhouse/${PROJECT_NAME}* ]]; then
+for whl in /io/dist/*.whl; do
+    if [[ $whl == /io/dist/${PROJECT_NAME}* ]]; then
       if [[ $whl != *none-any.whl ]]; then
 #       if not an os-dependent build, the following repair will complain
-        auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+        auditwheel repair "$whl" --plat $PLAT -w /io/dist/
       fi
     else
       rm $whl
@@ -34,12 +34,12 @@ echo `pwd`
 
 ls / -l
 
-ls /io/wheelhouse -l
+ls /io/dist -l
 
 # Install packages and test
 for PYBIN in ${PYBINS[@]}; do
     PYBIN="/opt/python/${PYBIN}/bin"
-    "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/wheelhouse
+    "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/dist
 #    (cd "$HOME";ls -l; "${PYBIN}/nosetests" ${PROJECT_NAME})
 done
-chmod 777 /io/wheelhouse/*.*
+chmod 777 /io/dist/*.*
