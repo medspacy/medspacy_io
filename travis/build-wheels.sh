@@ -43,5 +43,5 @@ ls /io/wheelhouse -l
 for PYBIN in ${PYBINS[@]}; do
     PYBIN="/opt/python/${PYBIN}/bin"
     "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/wheelhouse
-    (cd "$HOME";ls -l; "${PYBIN}/nosetests" ${PROJECT_NAME})
+#    (cd "$HOME";ls -l; "${PYBIN}/nosetests" ${PROJECT_NAME})
 done
