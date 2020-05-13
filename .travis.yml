@@ -57,7 +57,6 @@ deploy:
   - provider: script
     script: ls wheelhouse && /opt/python/${TRAVIS_PY36}/bin/python -m twine upload -u ${PYPI_LOGIN} -p ${TWINE_PASSWORD} --skip-existing wheelhouse/*
     on:
-      repo: ${PYPI_REPO_NAME}
       tags: true
       condition: "$DEPLOY_TEST == false"
 
