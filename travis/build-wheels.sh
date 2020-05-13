@@ -22,6 +22,7 @@ done
 for whl in /io/wheelhouse/*.whl; do
     if [[ $whl == /io/wheelhouse/${PROJECT_NAME}* ]]; then
       if [[ $whl != *none-any.whl ]]; then
+#       if not an os-dependent build, the following repair will complain
         auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
       fi
     else
