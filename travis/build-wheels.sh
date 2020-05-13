@@ -32,12 +32,7 @@ for whl in /io/wheelhouse/*.whl; do
 done
 
 #unfortunately, the project name was changed in history, which causes travis deploy rejection. Has to be fixed ugly.
-for whl in in /io/wheelhouse/*.whl; do
-  norm_whl=${whl/_/-}
-  mv $whl $norm_whl
-done
-
-for whl in in /io/wheelhouse/*.gz; do
+for whl in /io/wheelhouse/*.*; do
   norm_whl=${whl/_/-}
   mv $whl $norm_whl
 done
