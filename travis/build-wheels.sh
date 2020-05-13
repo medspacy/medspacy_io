@@ -19,8 +19,8 @@ for PYBIN in ${PYBINS[@]};do
 done
 
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/*.whl; do
-    if [[ $whl == wheelhouse/${PROJECT_NAME}* ]]; then
+for whl in /io/wheelhouse/*.whl; do
+    if [[ $whl == /io/wheelhouse/${PROJECT_NAME}* ]]; then
       auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
     else
       rm $whl
