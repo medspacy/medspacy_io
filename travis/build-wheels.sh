@@ -31,10 +31,6 @@ echo `pwd`
 
 ls / -l
 
-ls wheelhouse
-
-ls /wheelhouse
-
 ls /io/wheelhouse -l
 
 # Install packages and test
