@@ -14,7 +14,7 @@ class EhostDocReader(BaseDocReader):
     """ This is a subclass of BaseDocReader to read in eHOST format files and generate SpaCy Docs
     """
 
-    def __init__(self, nlp: Language = None, use_adjudication: bool = False,
+    def __init__(self, nlp: Language = None, support_overlap: bool = False, use_adjudication: bool = False,
                  schema_file: Union[str, Path] = ''):
         """
 
@@ -24,8 +24,7 @@ class EhostDocReader(BaseDocReader):
         """
         self.schema_set = False
         self.set_attributes(schema_file=schema_file)
-
-        super().__init__(nlp=nlp, use_adjudication=use_adjudication)
+        super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication)
         pass
 
     def set_attributes(self, schema_file: Union[str, Path] = ''):
@@ -67,14 +66,13 @@ class EhostDocReader(BaseDocReader):
         self.check_file_validity(anno_file)
         return anno_file
 
-    def process(self, doc):
+    def process_without_overlaps(self, doc):
         """
-        Take in a SpaCy doc, add eHOST annotation(Span)s.
+        Take in a SpaCy doc, add eHOST annotation(Span)s to doc.ents.
+        This function doesn't support overlapped annotations.
          :arg doc: a SpaCy doc
         """
-        spans, classes, attributes = self.parse_to_dicts(self.anno)
-        sorted_span = sorted(spans.items(), key=lambda x: x[1][0])
-
+        sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
         existing_entities = list(doc.ents)
         new_entities = list()
         previous_token_offset = 0
@@ -84,6 +82,10 @@ class EhostDocReader(BaseDocReader):
             # binary search is used here to speed up
             token_start = self.find_start_token(start, previous_token_offset, total, doc)
             token_end = self.find_end_token(end, token_start, total, doc)
+            if token_start < 0 or token_start >= total or token_end < 0 or token_end > total:
+                raise ValueError(
+                    "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
+                    "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
                 for attr_id in classes[id][1]:
@@ -100,7 +102,43 @@ class EhostDocReader(BaseDocReader):
         doc.ents = existing_entities + new_entities
         return doc
 
-    def parse_to_dicts(self, xml_file: str) -> Tuple[OrderedDict, OrderedDict]:
+    def process_support_overlaps(self, doc):
+        """
+        Take in a SpaCy doc, add eHOST annotation(Span)s. This function supports adding overlapped annotations.
+         :arg doc: a SpaCy doc
+        """
+        sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
+        existing_concepts: dict = doc._.concepts
+        previous_token_offset = 0
+        previous_abs_end = 0
+        total = len(doc)
+        for id, (start, end) in sorted_span:
+            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
+            # binary search is used here to speed up
+            if start < previous_abs_end:
+                token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0, total, doc)
+            else:
+                token_start = self.find_start_token(start, previous_token_offset, total, doc)
+            token_end = self.find_end_token(end, token_start, total, doc)
+            if token_start >= 0 and token_end > 0:
+                span = Span(doc, token_start, token_end, label=classes[id][0])
+                for attr_id in classes[id][1]:
+                    attr_name = attributes[attr_id][0]
+                    attr_value = attributes[attr_id][1]
+                    setattr(span._, attr_name, attr_value)
+                if classes[id][0] not in existing_concepts:
+                    existing_concepts[classes[id][0]] = list()
+                existing_concepts[classes[id][0]].append(span)
+                previous_token_offset = token_end
+                previous_abs_end = end
+            else:
+                raise OverflowError(
+                    'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
+                                                                                                end))
+            pass
+        return doc
+
+    def parse_to_dicts(self, xml_file: str, sort_spans: bool = False) -> Tuple[OrderedDict, OrderedDict]:
         iter = etree.iterparse(xml_file, events=('start',))
         # this doesn't seem elegant, but is said to be the fastest way
         spans = OrderedDict()
@@ -129,6 +167,8 @@ class EhostDocReader(BaseDocReader):
                 if id not in classes:
                     classes[id] = ['', []]
                 classes[id][1].append(ele.get('id'))
+        if sort_spans:
+            spans = sorted(spans.items(), key=lambda x: x[1][0])
         return spans, classes, attributes
 
     # <annotation>

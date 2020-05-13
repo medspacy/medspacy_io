@@ -29,6 +29,8 @@ done
 
 echo `pwd`
 
+ls / -l
+
 ls wheelhouse
 
 ls /wheelhouse

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from pathlib import Path
 from typing import List, Union, Type, Tuple
 
@@ -11,7 +12,7 @@ class BaseDocReader(object):
     A base class for document reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, nlp: Language = None, **kwargs):
+    def __init__(self, nlp: Language = None, support_overlap: bool = False, **kwargs):
         """
 
         :param nlp: a SpaCy language model
@@ -24,6 +25,7 @@ class BaseDocReader(object):
         self.nlp = nlp
         self.txt = None
         self.anno = None
+        self.support_overlap = support_overlap
         pass
 
     def get_txt_content(self, txt_file: Path) -> str:
@@ -77,10 +79,29 @@ class BaseDocReader(object):
         """
         self.get_contents(txt_file=txt_file)
         doc = self.nlp(self.txt)
+        if self.support_overlap:
+            doc.set_extension("concepts", default=OrderedDict(), force=True)
         return self.process(doc)
 
     def process(self, doc):
         """:arg a SpaCy Doc, must be implemented in the subclass."""
+        if self.support_overlap:
+            return self.process_support_overlaps(doc)
+        else:
+            return self.process_without_overlaps(doc)
+
+    def process_without_overlaps(self, doc):
+        """:arg a SpaCy Doc, can be implemented in the subclass as needed.
+            This function will add spans to doc.ents (defined by SpaCy as default)
+            which doesn't allow overlapped annotations.
+        """
+        return doc
+
+    def process_support_overlaps(self, doc):
+        """:arg a SpaCy Doc, can be implemented in the subclass as needed.
+            This function will add spans to doc._.concepts (defined in 'read' function above,
+            which allows overlapped annotations.
+        """
         return doc
 
     def get_contents(self, txt_file: Union[str, Path]):
