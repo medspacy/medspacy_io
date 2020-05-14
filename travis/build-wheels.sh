@@ -41,6 +41,6 @@ for PYBIN in ${PYBINS[@]}; do
     PYBIN="/opt/python/${PYBIN}/bin"
     "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/dist
     "${PYBIN}/pip" install nose
-    (cd /io/tests; ls -l; nosetests)
+    (cd /io/tests; ls -l; ${PYBIN}/nosetests)
 done
 chmod -R 777 /io/
