@@ -40,6 +40,6 @@ ls /io/dist -l
 for PYBIN in ${PYBINS[@]}; do
     PYBIN="/opt/python/${PYBIN}/bin"
     "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/dist
-    (cd /io/tests; ls -l; python -m unittest)
+    (cd /io/tests; ls -l; nosetests)
 done
 chmod -R 777 /io/
