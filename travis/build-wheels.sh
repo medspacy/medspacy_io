@@ -41,9 +41,7 @@ for PYBIN in ${PYBINS[@]}; do
     PYBIN="/opt/python/${PYBIN}/bin"
     "${PYBIN}/pip" install ${PROJECT_NAME} --no-index -f /io/dist
     "${PYBIN}/pip" install nose
-    cd /io/tests
-    ls -l
-#   somehow nosetests on directory doesn't work
-    for TEST_PY in test*.py; do   "${PYBIN}/nosetests" ${F}; done
+    #   somehow nosetests on directory doesn't work
+    (cd /io/tests; for TEST_PY in test*.py; do   "${PYBIN}/nosetests" ${F}; done)
 done
 chmod -R 777 /io/
