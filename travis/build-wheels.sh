@@ -44,8 +44,6 @@ for PYBIN in ${PYBINS[@]}; do
     cd /io/tests
     ls -l
 #   somehow nosetests on directory doesn't work
-    for TEST_PY in /io/tests/*.py; do
-      ${PYBIN}/nosetests ${TEST_PY}
-    done
+    for TEST_PY in test*.py; do   "${PYBIN}/nosetests" ${F}; done
 done
 chmod -R 777 /io/
