@@ -20,11 +20,12 @@ class TestEhostReader(unittest.TestCase):
         print(len(list(doc.sents)))
         assert (len(doc._.concepts) == 7)
         assert (len(doc._.concepts['Incision_and_Drainage']) == 2)
-        vectorizer = Vectorizer()
-        df = vectorizer.to_sents_df(doc)
+        df = Vectorizer.to_sents_df(doc)
+        # print(df.shape)
         assert (df.shape[0] == 8)
-        df = vectorizer.to_sents_df(doc, sent_window=2)
-        assert (df.shape[0] == 21)
+        df = Vectorizer.to_sents_df(doc, sent_window=2)
+        # print(df.shape)
+        assert (df.shape[0] == 13)
 
     def test_to_sents_nparray(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus/config/projectschema.xml',
@@ -33,13 +34,12 @@ class TestEhostReader(unittest.TestCase):
         print(len(list(doc.sents)))
         assert (len(doc._.concepts) == 7)
         assert (len(doc._.concepts['Incision_and_Drainage']) == 2)
-        vectorizer = Vectorizer()
-        df = vectorizer.to_sents_nparray(doc)
+        df = Vectorizer.to_sents_nparray(doc)
         print(df.shape)
         assert (df.shape[0] == 8)
-        df = vectorizer.to_sents_nparray(doc, sent_window=2)
+        df = Vectorizer.to_sents_nparray(doc, sent_window=2)
         print(df.shape)
-        assert (df.shape[0] == 21)
+        assert (df.shape[0] == 13)
 
     def test_docs_to_sents_df(self):
         dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
@@ -47,10 +47,9 @@ class TestEhostReader(unittest.TestCase):
                                     docReaderClass=EhostDocReader, recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read()
-        vectorizer = Vectorizer()
-        df = vectorizer.docs_to_sents_df(docs)
+        df = Vectorizer.docs_to_sents_df(docs)
         assert (df.shape[0] == 12)
-        df = vectorizer.docs_to_sents_df(docs, sent_window=2)
+        df = Vectorizer.docs_to_sents_df(docs, sent_window=2)
         assert (df.shape[0] == 20)
 
     def test_docs_to_sents_df2(self):
@@ -59,8 +58,7 @@ class TestEhostReader(unittest.TestCase):
                                     docReaderClass=EhostDocReader, recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read()
-        vectorizer = Vectorizer()
-        df = vectorizer.docs_to_sents_df(docs)
+        df = Vectorizer.docs_to_sents_df(docs)
         assert (df.shape[0] == 16)
-        df = vectorizer.docs_to_sents_df(docs, sent_window=2)
+        df = Vectorizer.docs_to_sents_df(docs, sent_window=2)
         assert (df.shape[0] == 27)
