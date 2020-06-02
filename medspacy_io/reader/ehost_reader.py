@@ -213,9 +213,9 @@ class EhostDocReader(BaseDocReader):
 
 class EhostDirReader(BaseDirReader):
     def __init__(self, txt_dir: Union[str, Path], txt_extension: str = 'txt',
-                 nlp: Language = None, docReaderClass: Type = None,
+                 nlp: Language = None, docReaderClass: Type = None, support_overlap: bool = False,
                  recursive: bool = False, use_adjudication: bool = False,
-                 schema_file: Union[str, Path] = ''):
+                 schema_file: Union[str, Path] = '', **kwargs):
         """
         :param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation content are saved in the same file).
         :param txt_extension: the text file extension name (default is 'txt').
@@ -225,6 +225,7 @@ class EhostDirReader(BaseDirReader):
         :param use_adjudication: if read annotations from adjudication folder
         :param schema_file: initiate Span attributes using eHOST schema configuration file
         """
-        super().__init__(txt_dir=txt_dir, txt_extension=txt_extension, nlp=nlp, docReaderClass=docReaderClass,
-                         recursive=recursive, use_adjudication=use_adjudication, schema_file=schema_file)
+        super().__init__(txt_dir=txt_dir, support_overlap=support_overlap, txt_extension=txt_extension, nlp=nlp,
+                         docReaderClass=docReaderClass, recursive=recursive, use_adjudication=use_adjudication,
+                         schema_file=schema_file, **kwargs)
         pass

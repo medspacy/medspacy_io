@@ -51,6 +51,16 @@ class TestEhostReader(unittest.TestCase):
         for doc in docs:
             self.eval(doc)
 
+    def test_dir_reader2(self):
+        dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
+                                    nlp=English(),support_overlap=True,
+                                    docReaderClass=EhostDocReader, recursive=True,
+                                    schema_file='data/ehost_test_corpus/config/projectschema.xml')
+        docs = dir_reader.read()
+        assert (len(docs) == 2)
+        for doc in docs:
+            assert (len(doc._.concepts) == 7)
+
     def eval(self, doc):
         assert (len(doc.ents) == 7)
         assert (str(doc.ents[0]) == 'CHIEF')
