@@ -146,6 +146,7 @@ class BaseDocReader(object):
         return -1
 
 
+
 class BaseDirReader:
     """
     A base class for directory reader, define interfaces for subclasses to inherent from

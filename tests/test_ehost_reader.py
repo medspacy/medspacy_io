@@ -53,13 +53,13 @@ class TestEhostReader(unittest.TestCase):
 
     def test_dir_reader2(self):
         dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
-                                    nlp=English(),support_overlap=True,
+                                    nlp=English(), support_overlap=True,
                                     docReaderClass=EhostDocReader, recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read()
         assert (len(docs) == 2)
         for doc in docs:
-            assert (len(doc._.concepts) == 7)
+            self.eval(doc)
 
     def eval(self, doc):
         assert (len(doc.ents) == 7)

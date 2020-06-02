@@ -1,3 +1,4 @@
 spacy>=2.2.2
 lxml>=4.4.0
 nose
+pyrush>=1.0.3
