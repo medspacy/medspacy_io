@@ -27,7 +27,7 @@ include_dirs = [dir_path + "/medspacy", dir_path]
 
 setup(
     name='medspacy_io',
-    packages=['medspacy_io', 'medspacy_io.reader', 'medspacy_io.writer', 'medspacy_io.consumer'],
+    packages=['medspacy_io', 'medspacy_io.reader', 'medspacy_io.writer', 'medspacy_io.consumer', 'medspacy_io.vectorizer'],
     # this must be the same as the name above
     version=get_version(),
     description='A collection of modules to facilitate reading text from various sources and writing to various sources.',

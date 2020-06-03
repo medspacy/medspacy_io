@@ -123,7 +123,11 @@ class BaseDocReader(object):
         """
         if right_token_offset >= left_token_offset:
             mid = int(left_token_offset + (right_token_offset - left_token_offset) / 2)
+            print(mid, doc[mid].idx, doc[mid].idx + len(doc[mid]), start)
             if doc[mid].idx <= start and start < doc[mid].idx + len(doc[mid]):
+                return mid
+            elif mid > 1 and doc[mid].idx > start >= doc[mid - 1].idx + len(doc[mid - 1]):
+                # sometime, manually created annotation can start outside SpaCy tokens, so adjustment is needed here.
                 return mid
             elif doc[mid].idx > start:
                 return self.find_start_token(start, left_token_offset, mid - 1, doc)
@@ -144,7 +148,6 @@ class BaseDocReader(object):
             if end <= doc[i].idx + len(doc[i]):
                 return i + 1
         return -1
-
 
 
 class BaseDirReader:

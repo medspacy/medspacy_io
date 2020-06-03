@@ -65,7 +65,6 @@ class Vectorizer:
         @return: a dictionary
         """
         sent_idx = IntervalTree()
-        print('\n---\n'.join([str(s) for s in doc.sents]))
         sents = list(doc.sents)
         context_sents = []
         for i in range(0, len(sents) - sent_window + 1):
