@@ -123,7 +123,6 @@ class BaseDocReader(object):
         """
         if right_token_offset >= left_token_offset:
             mid = int(left_token_offset + (right_token_offset - left_token_offset) / 2)
-            print(mid, doc[mid].idx, doc[mid].idx + len(doc[mid]), start)
             if doc[mid].idx <= start and start < doc[mid].idx + len(doc[mid]):
                 return mid
             elif mid > 1 and doc[mid].idx > start >= doc[mid - 1].idx + len(doc[mid - 1]):
