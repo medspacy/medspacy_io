@@ -3,8 +3,7 @@ from spacy.lang.en import English
 from medspacy_io.reader import EhostDocReader
 from medspacy_io.reader import EhostDirReader
 from PyRuSH import PyRuSHSentencizer
-
-from vectorizer.Vectorizer import Vectorizer
+from medspacy_io.vectorizer import Vectorizer
 
 
 class TestEhostReader(unittest.TestCase):
@@ -22,10 +21,10 @@ class TestEhostReader(unittest.TestCase):
         assert (len(doc._.concepts['Nonspecific_SSTI']) == 1)
         df = Vectorizer.to_sents_df(doc)
         # print(df.shape)
-        assert (df.shape[0] == 5)
+        assert (df.shape[0] == 4)
         df = Vectorizer.to_sents_df(doc, sent_window=2)
         # print(df.shape)
-        assert (df.shape[0] == 6)
+        assert (df.shape[0] == 5)
 
     def test_to_sents_nparray(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus/config/projectschema.xml',
@@ -35,11 +34,11 @@ class TestEhostReader(unittest.TestCase):
         assert (len(doc._.concepts) == 3)
         assert (len(doc._.concepts['Nonspecific_SSTI']) == 1)
         df = Vectorizer.to_sents_nparray(doc)
-        print(df.shape)
-        assert (df.shape[0] == 5)
+        print(df)
+        assert (df.shape[0] == 4)
         df = Vectorizer.to_sents_nparray(doc, sent_window=2)
         print(df.shape)
-        assert (df.shape[0] == 6)
+        assert (df.shape[0] == 5)
 
     def test_docs_to_sents_df(self):
         dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
@@ -59,6 +58,6 @@ class TestEhostReader(unittest.TestCase):
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read()
         df = Vectorizer.docs_to_sents_df(docs)
-        assert (df.shape[0] == 13)
+        assert (df.shape[0] == 12)
         df = Vectorizer.docs_to_sents_df(docs, sent_window=2)
-        assert (df.shape[0] == 20)
+        assert (df.shape[0] == 19)
