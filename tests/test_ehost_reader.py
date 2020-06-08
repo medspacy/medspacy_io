@@ -31,7 +31,7 @@ class TestEhostReader(unittest.TestCase):
         self.eval(doc)
 
     def test_read_overlap(self):
-        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         assert (len(doc._.concepts) == 3)
