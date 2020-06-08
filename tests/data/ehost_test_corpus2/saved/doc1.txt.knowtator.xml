@@ -1,44 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <annotations textSource="doc1.txt">
     <annotation>
-        <mention id="EHOST_Instance_32" />
+        <mention id="EHOST_Instance_1" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="82" end="90" />
         <spannedText>year-old</spannedText>
         <creationDate>Mon Apr 20 02:16:44 MDT 2020</creationDate>
     </annotation>
-    <classMention id="EHOST_Instance_32">
+    <classMention id="EHOST_Instance_1">
         <mentionClass id="PreAnnotated">year-old</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_33" />
+        <mention id="EHOST_Instance_2" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="115" end="127" />
         <spannedText>The patient</spannedText>
         <creationDate>Wed Jun 03 01:16:39 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_35">
+    <stringSlotMention id="EHOST_Instance_4">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="present" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_33">
-        <hasSlotMention id="EHOST_Instance_35" />
+    <classMention id="EHOST_Instance_2">
+        <hasSlotMention id="EHOST_Instance_4" />
         <mentionClass id="Nonspecific_SSTI">The patient</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_34" />
-        <annotator id="eHOST_2010">sjl</annotator>
-        <span start="128" end="137" />
-        <spannedText>presented</spannedText>
-        <creationDate>Mon Apr 20 02:16:58 MDT 2020</creationDate>
+        <mention id="EHOST_Instance_3" />
+        <annotator id="eHOST_2010">Extensible_Human_Oracle_Suite_of_Tools</annotator>
+        <span start="182" end="183" />
+        <spannedText />
+        <creationDate>Sun Jun 07 19:52:18 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_36">
+    <stringSlotMention id="EHOST_Instance_5">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="present" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_34">
-        <hasSlotMention id="EHOST_Instance_36" />
-        <mentionClass id="Exclusions">presented</mentionClass>
+    <classMention id="EHOST_Instance_3">
+        <hasSlotMention id="EHOST_Instance_5" />
+        <mentionClass id="Exclusions" />
     </classMention>
     <eHOST_Adjudication_Status version="1.0">
         <Adjudication_Selected_Annotators version="1.0" />
