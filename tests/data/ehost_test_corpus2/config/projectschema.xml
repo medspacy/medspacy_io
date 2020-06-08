@@ -105,6 +105,13 @@
                 <attributeDefOptionDef>negated</attributeDefOptionDef>
                 <attributeDefOptionDef>uncertain</attributeDefOptionDef>
             </attributeDef>
+            <attributeDef>
+                <Name>test</Name>
+                <isCode>false</isCode>
+                <attributeDefOptionDef>v1</attributeDefOptionDef>
+                <attributeDefOptionDef>v2</attributeDefOptionDef>
+                <attributeDefOptionDef>v3</attributeDefOptionDef>
+            </attributeDef>
             <Source>eHOST</Source>
         </classDef>
         <classDef>

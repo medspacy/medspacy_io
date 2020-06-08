@@ -13,7 +13,7 @@ class TestEhostReader(unittest.TestCase):
         self.nlp.add_pipe(PyRuSHSentencizer('conf/rush_rules.tsv'))
 
     def test_to_sents_df(self):
-        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         print(len(list(doc.sents)))
@@ -27,7 +27,7 @@ class TestEhostReader(unittest.TestCase):
         assert (df.shape[0] == 5)
 
     def test_to_sents_nparray(self):
-        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         print(len(list(doc.sents)))
@@ -37,6 +37,56 @@ class TestEhostReader(unittest.TestCase):
         print(df)
         assert (df.shape[0] == 4)
         df = Vectorizer.to_sents_nparray(doc, sent_window=2)
+        print(df.shape)
+        assert (df.shape[0] == 5)
+
+    def test_to_sents_df_on_attr_value(self):
+        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+                                 support_overlap=True)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
+        df = Vectorizer.to_sents_df(doc,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'present': 'PRES_Nonspecific_SSTI'}}})
+        print(df.shape)
+        print(df)
+        assert (df.shape[0] == 4)
+        assert (df.iloc[0].y == 'PRES_Nonspecific_SSTI')
+        df = Vectorizer.to_sents_df(doc, sent_window=2,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'present': 'PRES_Nonspecific_SSTI'}}})
+        print(df)
+        assert (df.shape[0] == 3)
+
+    def test_to_sents_df_on_attr_value2(self):
+        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+                                 support_overlap=True)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
+        df = Vectorizer.to_sents_df(doc,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'negated': 'PRES_Nonspecific_SSTI'}}})
+        print(df.shape)
+        print(df)
+        assert (df.shape[0] == 4)
+        assert (df.iloc[0].y == 'NEG')
+        df = Vectorizer.to_sents_df(doc, sent_window=2,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'negated': 'PRES_Nonspecific_SSTI'}}})
+        print(df.shape)
+        assert (df.shape[0] == 3)
+        print(df)
+        assert (df.iloc[0].y == 'NEG')
+
+    def test_to_sents_df_on_attr_value3(self):
+        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+                                 support_overlap=True)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
+        df = Vectorizer.to_sents_df(doc,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'present': 'PRES_Nonspecific_SSTI'},
+                                                                      'test': {'v2': "TYPE_1"}}})
+        print(df.shape)
+        print(df)
+        assert (df.shape[0] == 5)
+        assert (df.iloc[0].y == 'PRES_Nonspecific_SSTI')
+        assert (df.iloc[1].y == 'TYPE_1')
+        df = Vectorizer.to_sents_df(doc, sent_window=2,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'present': 'PRES_Nonspecific_SSTI'},
+                                                                      'test': {'v2': "TYPE_1"}}})
         print(df.shape)
         assert (df.shape[0] == 5)
 
@@ -55,7 +105,7 @@ class TestEhostReader(unittest.TestCase):
         dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus2/',
                                     nlp=self.nlp, support_overlap=True,
                                     docReaderClass=EhostDocReader, recursive=True,
-                                    schema_file='data/ehost_test_corpus/config/projectschema.xml')
+                                    schema_file='data/ehost_test_corpus2/config/projectschema.xml')
         docs = dir_reader.read()
         df = Vectorizer.docs_to_sents_df(docs)
         assert (df.shape[0] == 12)

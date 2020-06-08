@@ -1,3 +1,7 @@
 spacy>=2.2.2
 lxml>=4.4.0
 pandas>=0.10.0
+numpy~=1.18.0
+quicksectx~=0.2.9
+pyrush~=1.0.3.1
+setuptools~=42.0.2

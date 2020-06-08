@@ -41,9 +41,9 @@ class EhostDocReader(BaseDocReader):
             for attr_def in root.iter("attributeDef"):
                 name = attr_def[0].text.replace(' ', '_')
                 default_value = attr_def[2].text
-            if name not in attr_names and not Span.has_extension(name):
-                Span.set_extension(name, default=default_value)
-                attr_names.add(name)
+                if name not in attr_names and not Span.has_extension(name):
+                    Span.set_extension(name, default=default_value)
+                    attr_names.add(name)
             self.schema_set = True
         pass
 
