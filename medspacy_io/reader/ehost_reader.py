@@ -1,3 +1,4 @@
+import logging
 from collections import OrderedDict
 from pathlib import Path
 from typing import Union, Tuple, Type
@@ -15,16 +16,25 @@ class EhostDocReader(BaseDocReader):
     """
 
     def __init__(self, nlp: Language = None, support_overlap: bool = False, use_adjudication: bool = False,
-                 schema_file: Union[str, Path] = '', store_anno_string: bool = False):
+                 schema_file: Union[str, Path] = '', store_anno_string: bool = False,
+                 log_level: bool = logging.WARNING):
         """
 
         :param nlp: a SpaCy language model
+        :param support_overlap: if the EhostDocReader need to support reading from overlapped annotations.
+            Because SpaCy's Doc.ents does not allows overlapped Spans, to support overlapping, Spans need to be stored
+            somewhere else----Doc._.concepts
         :param use_adjudication: if read annotations from adjudication folder
         :param schema_file: initiate Span attributes using eHOST schema configuration file
+        :param store_anno_string: whether read annotated string from annotations to double check parsed Span's correction
+        :param log_level: set the logger's logging level. TO debug, set to logging.DEBUG
         """
         self.schema_set = False
         self.set_attributes(schema_file=schema_file)
-        super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication, store_anno_string=store_anno_string)
+        if store_anno_string:
+            Span.set_extension("span_txt", default="")
+        super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication,
+                         store_anno_string=store_anno_string, log_level=log_level)
         pass
 
     def set_attributes(self, schema_file: Union[str, Path] = ''):
@@ -75,11 +85,17 @@ class EhostDocReader(BaseDocReader):
         sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
         existing_entities = list(doc.ents)
         new_entities = list()
-        previous_token_offset = 0
-        total = len(doc)
+        token_left_bound = 0
+        token_right_bound = len(doc) - 1
         token_start = -1
         token_end = -1
-        for id, (start, end) in sorted_span:
+        for id, span_tuple in sorted_span:
+            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
+            # binary search is used here to speed up
+            if self.store_anno_string:
+                start, end, span_txt = span_tuple
+            else:
+                start, end = span_tuple
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
             if start < doc[0].idx:
@@ -87,18 +103,18 @@ class EhostDocReader(BaseDocReader):
                 # token
                 token_start = 0
                 token_end = 1
-            elif previous_token_offset >= total:
+            elif token_left_bound >= token_right_bound:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                token_start = total - 2
-                token_end = total - 1
+                token_start = token_right_bound - 2
+                token_end = token_right_bound - 1
             else:
-                token_start = self.find_start_token(start, previous_token_offset, total, doc)
+                token_start = self.find_start_token(start, token_left_bound, token_right_bound, doc)
                 if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = total - 1
+                    token_end = token_right_bound - 1
                 else:
-                    token_end = self.find_end_token(end, token_start, total, doc)
-            if token_start < 0 or token_start >= total or token_end < 0 or token_end > total:
+                    token_end = self.find_end_token(end, token_start, token_right_bound, doc)
+            if token_start < 0 or token_start >= token_right_bound or token_end < 0 or token_end > token_right_bound:
                 raise ValueError(
                     "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
                     "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
@@ -108,8 +124,10 @@ class EhostDocReader(BaseDocReader):
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
                     setattr(span._, attr_name, attr_value)
+                if self.store_anno_string and span_txt is not None:
+                    setattr(span._, "span_txt", span_txt)
                 new_entities.append(span)
-                previous_token_offset = token_end
+                token_left_bound = token_end
             else:
                 raise OverflowError(
                     'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
@@ -125,43 +143,53 @@ class EhostDocReader(BaseDocReader):
         """
         sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
         existing_concepts: dict = doc._.concepts
-        previous_token_offset = 0
+        token_left_bound = 0
         previous_abs_end = 0
-        total = len(doc)
+        token_right_bound = len(doc) - 1
         token_start = -1
         token_end = -1
-        for id, (start, end) in sorted_span:
+        for id, span_tuple in sorted_span:
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
+            if self.store_anno_string:
+                start, end, span_txt = span_tuple
+            else:
+                start, end = span_tuple
             if start < doc[0].idx:
                 # If the annotation fall into a span that is before the 1st Spacy token, adjust the span to the 1st
                 # token
                 token_start = 0
                 token_end = 1
-            elif previous_token_offset >= total:
+            elif token_left_bound >= token_right_bound:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                token_start = total - 2
-                token_end = total - 1
+                token_start = token_right_bound - 1
+                token_end = token_right_bound
             else:
                 if start < previous_abs_end:
-                    token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0, total, doc)
+                    token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0,
+                                                        token_right_bound, doc)
+                    self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
                 else:
-                    token_start = self.find_start_token(start, previous_token_offset, total, doc)
+                    token_start = self.find_start_token(start, token_left_bound, token_right_bound, doc)
+                    self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
                 if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = total - 1
+                    token_end = token_right_bound
                 else:
-                    token_end = self.find_end_token(end, token_start, total, doc)
+                    token_end = self.find_end_token(end, token_start, token_right_bound, doc)
+                    self.logger.debug("\tfind end token {}('{}')".format(token_end, doc[token_end]))
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
                 for attr_id in classes[id][1]:
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
                     setattr(span._, attr_name, attr_value)
+                if self.store_anno_string and span_txt is not None:
+                    setattr(span._, "span_txt", span_txt)
                 if classes[id][0] not in existing_concepts:
                     existing_concepts[classes[id][0]] = list()
                 existing_concepts[classes[id][0]].append(span)
-                previous_token_offset = token_end
+                token_left_bound = token_end
                 previous_abs_end = end
 
             else:
@@ -180,7 +208,10 @@ class EhostDocReader(BaseDocReader):
         for event, ele in iter:
             if ele.tag == 'annotation':
                 id, start, end, span_text = self.parse_annotation_tag(ele, iter)
-                spans[id] = (start, end)
+                if self.store_anno_string:
+                    spans[id] = (start, end, span_text)
+                else:
+                    spans[id] = (start, end)
             elif ele.tag == 'stringSlotMention':
                 attr_id, attr, value = self.parse_attribute_tag(ele, iter)
                 attributes[attr_id] = (attr, value)

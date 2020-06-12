@@ -1,9 +1,9 @@
+import logging
 from collections import OrderedDict
 from pathlib import Path
 from typing import List, Union, Type, Tuple
 
 from spacy.language import Language
-from spacy.syntax.nn_parser import Parser
 from spacy.tokens.doc import Doc
 
 
@@ -12,7 +12,8 @@ class BaseDocReader(object):
     A base class for document reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, nlp: Language = None, support_overlap: bool = False, **kwargs):
+    def __init__(self, nlp: Language = None, support_overlap: bool = False,
+                 log_level: int = logging.WARNING, **kwargs):
         """
 
         :param nlp: a SpaCy language model
@@ -26,6 +27,19 @@ class BaseDocReader(object):
         self.txt = None
         self.anno = None
         self.support_overlap = support_overlap
+        self.set_logger(log_level)
+
+        pass
+
+    def set_logger(self, level: int = logging.DEBUG):
+        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger()
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(level)
         pass
 
     def get_txt_content(self, txt_file: Path) -> str:
@@ -111,41 +125,59 @@ class BaseDocReader(object):
             self.anno = self.get_anno_content(txt_file)
         pass
 
-    def find_start_token(self, start: int, left_token_offset: int,
-                         right_token_offset: int, doc: Doc) -> int:
+    def find_start_token(self, start: int, token_left_bound: int,
+                         token_right_bound: int, doc: Doc) -> int:
         """
         Use binary search to find the token-based offset of an annotation (Span) start
 
         :arg start: the start character offset of input span
-        :arg left_token_offset: the left boundary (token offset) of the search window
-        :arg right_token_offset: the right boundary (token offset) of the search window
+        :arg token_left_bound: the left boundary (token offset) of the search window
+        :arg token_right_bound: the right boundary (token offset) of the search window
         :arg doc: the input SpaCy Doc
         """
-        if right_token_offset >= left_token_offset:
-            mid = int(left_token_offset + (right_token_offset - left_token_offset) / 2)
-            if mid >= len(doc) or mid < 0:
-                return -1
-            if doc[mid].idx <= start and start < doc[mid].idx + len(doc[mid]):
+        if token_right_bound > token_left_bound:
+            mid = int(token_left_bound + (token_right_bound - token_left_bound) / 2)
+            self.logger.debug(
+                "Find abs offset {} between {}[{}:{}] and {}[{}:{}], mid={}"
+                    .format(start, token_left_bound, doc[token_left_bound].idx,
+                            doc[token_left_bound].idx + doc[token_left_bound].__len__(),
+                            token_right_bound, doc[token_right_bound].idx,
+                            doc[token_right_bound].idx + doc[token_right_bound].__len__(), mid))
+            if doc[mid].idx <= start < doc[mid].idx + len(doc[mid]):
+                self.logger.debug(
+                    "return mid={} when doc[{}]({}) < {} < doc[{}].idx+len(doc[{}])({})"
+                        .format(mid, mid, doc[mid].idx, start, mid, mid, doc[mid].idx + len(doc[mid])))
                 return mid
             elif mid > 1 and doc[mid].idx > start >= doc[mid - 1].idx + len(doc[mid - 1]):
                 # sometime, manually created annotation can start outside SpaCy tokens, so adjustment is needed here.
+                self.logger.debug(
+                    "return mid={} when start {} between token {} and token []".format(mid, start, mid, mid - 1))
                 return mid
             elif doc[mid].idx > start:
-                return self.find_start_token(start, left_token_offset, mid - 1, doc)
+                if mid > 0:
+                    return self.find_start_token(start, token_left_bound, mid - 1, doc)
+                else:
+                    return -1
             else:
-                return self.find_start_token(start, mid + 1, right_token_offset, doc)
+                if mid < len(doc) - 1:
+                    return self.find_start_token(start, mid + 1, token_right_bound, doc)
+                else:
+                    return -1;
+
+        elif token_right_bound == token_left_bound:
+            return token_left_bound
         else:
             return -1
 
-    def find_end_token(self, end: int, token_start: int, total: int, doc: Doc):
+    def find_end_token(self, end: int, token_left_bound: int, token_right_bound: int, doc: Doc):
         """
         Assume most of the annotations are short (a few tokens), it will more efficient to not use binary search here.
         :arg end: the end character offset of input span
-        :arg token_start: the start token offset of the input span
-        :arg total: the total number of tokens--check if span'end are invalid
+        :arg token_left_bound: the start token offset of the input span
+        :arg token_right_bound: the end boundary of tokens--check if span'end are invalid
         :arg doc: SpaCy Doc
         """
-        for i in range(token_start, total):
+        for i in range(token_left_bound, token_right_bound + 1):
             if end <= doc[i].idx + len(doc[i]):
                 return i + 1
         return -1

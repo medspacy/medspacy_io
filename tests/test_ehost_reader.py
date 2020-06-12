@@ -1,3 +1,4 @@
+import logging
 import unittest
 from spacy.lang.en import English
 from medspacy_io.reader import EhostDocReader
@@ -40,6 +41,23 @@ class TestEhostReader(unittest.TestCase):
         assert (len(doc._.concepts) == 7)
         assert (len(doc._.concepts['Exclusions']) == 2)
         assert (len(doc._.concepts['Doc_Level_Purulence_Assessment']) == 2)
+
+    def test_check_spans(self):
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
+                                 support_overlap=False, store_anno_string=True)
+        doc = ereader.read('data/ehost_test_corpus/corpus/doc2.txt')
+        for span in doc.ents:
+            print(span._.span_txt, '<>', span)
+            assert (span._.span_txt.replace('\n', ' ') in str(span).replace('\n', ' '))
+
+    def test_check_spans2(self):
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+                                 support_overlap=True, store_anno_string=True,log_level=logging.DEBUG)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
+        for spans in doc._.concepts.values():
+            for span in spans:
+                print(span._.span_txt, '<>', span)
+                assert (span._.span_txt.replace('\n', ' ') in str(span).replace('\n', ' '))
 
     def test_dir_reader(self):
         dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
