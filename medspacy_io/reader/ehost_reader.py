@@ -32,7 +32,8 @@ class EhostDocReader(BaseDocReader):
         self.schema_set = False
         self.set_attributes(schema_file=schema_file)
         if store_anno_string:
-            Span.set_extension("span_txt", default="", force=True)
+            if not Span.has_extension("span_txt"):
+                Span.set_extension("span_txt", default="")
         super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication,
                          store_anno_string=store_anno_string, log_level=log_level)
         pass

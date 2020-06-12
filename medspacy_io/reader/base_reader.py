@@ -94,7 +94,8 @@ class BaseDocReader(object):
         self.get_contents(txt_file=txt_file)
         doc = self.nlp(self.txt)
         if self.support_overlap:
-            doc.set_extension("concepts", default=OrderedDict(), force=True)
+            if not doc.has_extension("concepts"):
+                doc.set_extension("concepts", default=OrderedDict())
         return self.process(doc)
 
     def process(self, doc):
