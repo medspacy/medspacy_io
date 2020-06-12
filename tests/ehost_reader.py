@@ -15,7 +15,7 @@ class EhostDocReader(BaseDocReader):
     """
 
     def __init__(self, nlp: Language = None, support_overlap: bool = False, use_adjudication: bool = False,
-                 schema_file: Union[str, Path] = '', store_anno_string: bool = False):
+                 schema_file: Union[str, Path] = ''):
         """
 
         :param nlp: a SpaCy language model
@@ -24,7 +24,7 @@ class EhostDocReader(BaseDocReader):
         """
         self.schema_set = False
         self.set_attributes(schema_file=schema_file)
-        super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication, store_anno_string=store_anno_string)
+        super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication)
         pass
 
     def set_attributes(self, schema_file: Union[str, Path] = ''):
@@ -87,17 +87,17 @@ class EhostDocReader(BaseDocReader):
                 # token
                 token_start = 0
                 token_end = 1
-            elif previous_token_offset >= total:
+            elif end >= doc[-1].idx + len(doc[-1]):
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                token_start = total - 2
-                token_end = total - 1
+                token_start = total - 1
+                token_end = total
+            elif previous_token_offset>=total:
+                token_start = total - 1
+                token_end = total
             else:
                 token_start = self.find_start_token(start, previous_token_offset, total, doc)
-                if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = total - 1
-                else:
-                    token_end = self.find_end_token(end, token_start, total, doc)
+                token_end = self.find_end_token(end, token_start, total, doc)
             if token_start < 0 or token_start >= total or token_end < 0 or token_end > total:
                 raise ValueError(
                     "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
@@ -130,28 +130,35 @@ class EhostDocReader(BaseDocReader):
         total = len(doc)
         token_start = -1
         token_end = -1
+        # print('\n'.join([str(s) for i,s in sorted_span]))
+        # print('last token: {}[{}-{}]'.format(total, doc[total-1].idx, doc[total-1].idx+len(doc[total-1])))
         for id, (start, end) in sorted_span:
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
+            # print('\nFind {} start from {}. Previous token {}[{}-{}]'.format(start,previous_abs_end, previous_token_offset,
+            #                                                                  doc[previous_token_offset].idx, doc[previous_token_offset].idx+len(doc[previous_token_offset])))
             if start < doc[0].idx:
                 # If the annotation fall into a span that is before the 1st Spacy token, adjust the span to the 1st
                 # token
                 token_start = 0
                 token_end = 1
-            elif previous_token_offset >= total:
+            elif  previous_token_offset>=total:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                token_start = total - 2
-                token_end = total - 1
+                token_start = total-2
+                token_end = total-1
             else:
-                if start < previous_abs_end:
+                if start==previous_abs_end:
+                    token_start=previous_token_offset
+                elif start < previous_abs_end:
                     token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0, total, doc)
                 else:
-                    token_start = self.find_start_token(start, previous_token_offset, total, doc)
+                    token_start = self.find_start_token(start, previous_token_offset, total-1, doc)
+
                 if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = total - 1
+                    token_end=total-1
                 else:
-                    token_end = self.find_end_token(end, token_start, total, doc)
+                    token_end = self.find_end_token(end, token_start, total-1, doc)
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
                 for attr_id in classes[id][1]:
@@ -162,12 +169,19 @@ class EhostDocReader(BaseDocReader):
                     existing_concepts[classes[id][0]] = list()
                 existing_concepts[classes[id][0]].append(span)
                 previous_token_offset = token_end
-                previous_abs_end = end
+                previous_abs_end = start
+
 
             else:
                 raise OverflowError(
-                    'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
-                                                                                                end))
+                    'The span of the annotation: {}[{}:{}] is out of document boundary, where previous token is {}[{}-{}],'
+                    '{}[{}-{}],'
+                    ' the last token is [{}-{}]'.
+                        format(classes[id][0], start, end, previous_token_offset,doc[previous_token_offset].idx,
+                               doc[previous_token_offset].idx+len(doc[previous_token_offset]),doc[-1].idx,
+                               doc[previous_token_offset-1].idx,
+                               doc[previous_token_offset-1].idx+len(doc[previous_token_offset-1]),doc[-1].idx,
+                               doc[-1].idx+len(str(doc[-1]))))
             pass
         return doc
 
