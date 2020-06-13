@@ -107,12 +107,12 @@ class EhostDocReader(BaseDocReader):
             elif token_start >= token_right_bound:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                token_start = token_right_bound - 2
-                token_end = token_right_bound - 1
+                token_start = token_right_bound - 1
+                token_end = token_right_bound
             else:
                 token_start = self.find_start_token(start, token_start, token_right_bound, doc)
                 if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = token_right_bound - 1
+                    token_end = token_right_bound +1
                 else:
                     token_end = self.find_end_token(end, token_start, token_right_bound, doc)
             if token_start < 0 or token_start >= token_right_bound or token_end < 0 or token_end > token_right_bound:
@@ -120,7 +120,7 @@ class EhostDocReader(BaseDocReader):
                     "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
                     "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
             if token_start >= 0 and token_end > 0:
-                span = Span(doc, token_start, token_end+1, label=classes[id][0])
+                span = Span(doc, token_start, token_end, label=classes[id][0])
                 for attr_id in classes[id][1]:
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]

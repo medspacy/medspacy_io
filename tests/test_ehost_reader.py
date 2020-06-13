@@ -44,7 +44,7 @@ class TestEhostReader(unittest.TestCase):
 
     def test_check_spans(self):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
-                                 support_overlap=False, store_anno_string=True)
+                                 support_overlap=False, store_anno_string=True,encoding='UTF8',log_level=logging.DEBUG)
         doc = ereader.read('data/ehost_test_corpus/corpus/doc2.txt')
         for span in doc.ents:
             print(span._.span_txt, '<>', span)
