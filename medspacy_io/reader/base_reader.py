@@ -5,7 +5,7 @@ from typing import List, Union, Type, Tuple
 
 from spacy.language import Language
 from spacy.tokens.doc import Doc
-
+import os
 
 class BaseDocReader(object):
     """
@@ -13,7 +13,7 @@ class BaseDocReader(object):
     """
 
     def __init__(self, nlp: Language = None, support_overlap: bool = False,
-                 log_level: int = logging.WARNING, **kwargs):
+                 log_level: int = logging.WARNING, encoding:str=None, **kwargs):
         """
 
         :param nlp: a SpaCy language model
@@ -26,8 +26,11 @@ class BaseDocReader(object):
         self.nlp = nlp
         self.txt = None
         self.anno = None
+        self.encoding=encoding
         self.support_overlap = support_overlap
         self.set_logger(log_level)
+        if not Doc.has_extension('doc_name'):
+            Doc.set_extension('doc_name', default='')
 
         pass
 
@@ -48,7 +51,7 @@ class BaseDocReader(object):
         :param txt_file: the path of a text file
         :return: the content of text file
         """
-        return Path(txt_file).read_text(encoding='UTF8')
+        return Path(txt_file).read_text(encoding=self.encoding)
 
     def get_anno_content(self, txt_file: Path) -> str:
         """
@@ -60,7 +63,7 @@ class BaseDocReader(object):
         """
         anno_file = self.infer_anno_file_path(txt_file)
         self.check_file_validity(anno_file)
-        return Path(anno_file).read_text(encoding='UTF8')
+        return Path(anno_file).read_text(encoding=self.encoding)
 
     def infer_anno_file_path(self, txt_file: Path) -> Path:
         """
@@ -93,6 +96,7 @@ class BaseDocReader(object):
         """
         self.get_contents(txt_file=txt_file)
         doc = self.nlp(self.txt)
+        doc._.doc_name=os.path.basename(str(txt_file))
         if self.support_overlap:
             if not doc.has_extension("concepts"):
                 doc.set_extension("concepts", default=OrderedDict())
@@ -179,7 +183,7 @@ class BaseDocReader(object):
         :arg doc: SpaCy Doc
         """
         for i in range(token_left_bound, token_right_bound + 1):
-            if end <= doc[i].idx + len(doc[i]):
+            if end <= doc[i].idx + doc[i].__len__():
                 return i + 1
         return -1
 
