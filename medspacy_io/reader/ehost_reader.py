@@ -17,7 +17,7 @@ class EhostDocReader(BaseDocReader):
 
     def __init__(self, nlp: Language = None, support_overlap: bool = False, use_adjudication: bool = False,
                  schema_file: Union[str, Path] = '', store_anno_string: bool = False,
-                 log_level: bool = logging.WARNING):
+                 log_level: bool = logging.WARNING, encoding:str=None, **kwargs):
         """
 
         :param nlp: a SpaCy language model
@@ -35,7 +35,7 @@ class EhostDocReader(BaseDocReader):
             if not Span.has_extension("span_txt"):
                 Span.set_extension("span_txt", default="")
         super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication,
-                         store_anno_string=store_anno_string, log_level=log_level)
+                         store_anno_string=store_anno_string, log_level=log_level,encoding=encoding, **kwargs)
         pass
 
     def set_attributes(self, schema_file: Union[str, Path] = ''):
@@ -86,7 +86,7 @@ class EhostDocReader(BaseDocReader):
         sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
         existing_entities = list(doc.ents)
         new_entities = list()
-        token_left_bound = 0
+        # token_left_bound = 0
         token_right_bound = len(doc) - 1
         token_start = -1
         token_end = -1
@@ -104,13 +104,13 @@ class EhostDocReader(BaseDocReader):
                 # token
                 token_start = 0
                 token_end = 1
-            elif token_left_bound >= token_right_bound:
+            elif token_start >= token_right_bound:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
                 token_start = token_right_bound - 2
                 token_end = token_right_bound - 1
             else:
-                token_start = self.find_start_token(start, token_left_bound, token_right_bound, doc)
+                token_start = self.find_start_token(start, token_start, token_right_bound, doc)
                 if end >= doc[-1].idx + doc[-1].__len__():
                     token_end = token_right_bound - 1
                 else:
@@ -120,7 +120,7 @@ class EhostDocReader(BaseDocReader):
                     "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
                     "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
             if token_start >= 0 and token_end > 0:
-                span = Span(doc, token_start, token_end, label=classes[id][0])
+                span = Span(doc, token_start, token_end+1, label=classes[id][0])
                 for attr_id in classes[id][1]:
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
@@ -128,7 +128,7 @@ class EhostDocReader(BaseDocReader):
                 if self.store_anno_string and span_txt is not None:
                     setattr(span._, "span_txt", span_txt)
                 new_entities.append(span)
-                token_left_bound = token_end
+                token_start = token_end
             else:
                 raise OverflowError(
                     'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
@@ -144,7 +144,7 @@ class EhostDocReader(BaseDocReader):
         """
         sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
         existing_concepts: dict = doc._.concepts
-        token_left_bound = 0
+        # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
         token_start = -1
@@ -161,26 +161,42 @@ class EhostDocReader(BaseDocReader):
                 # token
                 token_start = 0
                 token_end = 1
-            elif token_left_bound >= token_right_bound:
+            elif token_start >= token_right_bound:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                token_start = token_right_bound - 1
-                token_end = token_right_bound
+                self.logger.debug("token_start {} >= token_right_bound {}".format(token_start,token_right_bound))
+                token_start = token_right_bound
+                token_end = token_right_bound+1
             else:
-                if start < previous_abs_end:
-                    token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0,
-                                                        token_right_bound, doc)
-                    self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
-                else:
-                    token_start = self.find_start_token(start, token_left_bound, token_right_bound, doc)
-                    self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
+                # if start < previous_abs_end:
+                #     self.logger.debug("To find {} between token_start - 1({}[{}]) and  token_right_bound({}[{}])"
+                #                       .format(start, token_start-1, doc[token_start-1].idx,
+                #                               token_right_bound, doc[token_right_bound].idx), )
+                #     token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0,
+                #                                         token_right_bound, doc)
+                #     self.logger.debug('\tfind token_start={}[{}]'.format(token_start, doc[token_start].idx))
+                #
+                # else:
+                self.logger.debug("To find {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
+                                  .format(start, token_start , doc[token_start ].idx,
+                                          token_right_bound, doc[token_right_bound].idx), )
+                token_start = self.find_start_token(start, token_start, token_right_bound, doc)
+                self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
                 if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = token_right_bound
+                    self.logger.debug("end  ({}) >= doc[-1].idx ({}) + doc[-1].__len__() ({})".format(end, doc[-1].idx , doc[-1].__len__()))
+                    token_end = token_right_bound+1
                 else:
+                    self.logger.debug("To find token_end starts from {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
+                                      .format(end, token_start, doc[token_start].idx,
+                                              token_right_bound, doc[token_right_bound].idx))
                     token_end = self.find_end_token(end, token_start, token_right_bound, doc)
-                    self.logger.debug("\tfind end token {}('{}')".format(token_end, doc[token_end]))
+                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end]))
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    import re
+                    if re.sub('\s+',' ',span._.span_txt) != re.sub('\s+',' ',str(span)):
+                        self.logger.debug('{}[{}:{}]\n\t{}<>\n\t{}<>'.format(classes[id][0],token_start,token_end,re.sub('\s+',' ',span._.span_txt), re.sub('\s+',' ',str(span))))
                 for attr_id in classes[id][1]:
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
@@ -190,8 +206,8 @@ class EhostDocReader(BaseDocReader):
                 if classes[id][0] not in existing_concepts:
                     existing_concepts[classes[id][0]] = list()
                 existing_concepts[classes[id][0]].append(span)
-                token_left_bound = token_end
-                previous_abs_end = end
+                # token_start = token_end
+                previous_abs_end = token_start
 
             else:
                 raise OverflowError(
