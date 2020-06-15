@@ -4,6 +4,7 @@ from medspacy_io.reader import EhostDocReader
 from medspacy_io.reader import EhostDirReader
 from PyRuSH import PyRuSHSentencizer
 from medspacy_io.vectorizer import Vectorizer
+from spacy.tokens.doc import Doc
 
 
 class TestEhostReader(unittest.TestCase):
@@ -22,9 +23,16 @@ class TestEhostReader(unittest.TestCase):
         df = Vectorizer.to_sents_df(doc)
         # print(df.shape)
         assert (df.shape[0] == 4)
+        df = Vectorizer.to_sents_df(doc, track_doc_name=True)
+        # print(df.shape)
+        assert (df.shape[1] == 4)
         df = Vectorizer.to_sents_df(doc, sent_window=2)
         # print(df.shape)
         assert (df.shape[0] == 5)
+        df = Vectorizer.to_sents_df(doc, sent_window=2, track_doc_name=True)
+        # print(df.shape)
+        assert (df.shape[0] == 5)
+        assert (df.shape[1] == 4)
 
     def test_to_sents_nparray(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
@@ -39,6 +47,10 @@ class TestEhostReader(unittest.TestCase):
         df = Vectorizer.to_sents_nparray(doc, sent_window=2)
         print(df.shape)
         assert (df.shape[0] == 5)
+        df = Vectorizer.to_sents_nparray(doc, sent_window=2, track_doc_name=True)
+        print(df.shape)
+        assert (df.shape[0] == 5)
+        assert (df.shape[1] == 4)
 
     def test_to_sents_df_on_attr_value(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
@@ -54,6 +66,12 @@ class TestEhostReader(unittest.TestCase):
                                     type_filter={"Nonspecific_SSTI": {'status': {'present': 'PRES_Nonspecific_SSTI'}}})
         print(df)
         assert (df.shape[0] == 3)
+        df = Vectorizer.to_sents_df(doc, sent_window=2,
+                                    type_filter={"Nonspecific_SSTI": {'status': {'present': 'PRES_Nonspecific_SSTI'}}},
+                                    track_doc_name=True)
+        print(df)
+        assert (df.shape[0] == 3)
+        assert (df.shape[1] == 4)
 
     def test_to_sents_df_on_attr_value2(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
@@ -91,23 +109,30 @@ class TestEhostReader(unittest.TestCase):
         assert (df.shape[0] == 5)
 
     def test_docs_to_sents_df(self):
-        dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus/',
-                                    nlp=self.nlp, support_overlap=False,
+        if Doc.has_extension("concepts"):
+            Doc.remove_extension("concepts")
+        dir_reader = EhostDirReader(nlp=self.nlp, support_overlap=False,
                                     docReaderClass=EhostDocReader, recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
-        docs = dir_reader.read()
-        df = Vectorizer.docs_to_sents_df(docs)
+
+        docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
+        df = Vectorizer.docs_to_sents_df(docs, type_filter=set(), track_doc_name=True)
+        print(df)
         assert (df.shape[0] == 12)
+        df = Vectorizer.docs_to_sents_df(docs, type_filter=set())
+        print(df)
         df = Vectorizer.docs_to_sents_df(docs, sent_window=2)
         assert (df.shape[0] == 20)
 
     def test_docs_to_sents_df2(self):
-        dir_reader = EhostDirReader(txt_dir='data/ehost_test_corpus2/',
-                                    nlp=self.nlp, support_overlap=True,
+        dir_reader = EhostDirReader(nlp=self.nlp, support_overlap=True,
                                     docReaderClass=EhostDocReader, recursive=True,
                                     schema_file='data/ehost_test_corpus2/config/projectschema.xml')
-        docs = dir_reader.read()
+        docs = dir_reader.read(txt_dir='data/ehost_test_corpus2/')
         df = Vectorizer.docs_to_sents_df(docs)
         assert (df.shape[0] == 12)
         df = Vectorizer.docs_to_sents_df(docs, sent_window=2)
         assert (df.shape[0] == 19)
+        df = Vectorizer.docs_to_sents_df(docs, sent_window=2, track_doc_name=True)
+        assert (df.shape[0] == 19)
+        assert (df.shape[1] == 4)

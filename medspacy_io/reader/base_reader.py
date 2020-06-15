@@ -7,13 +7,14 @@ from spacy.language import Language
 from spacy.tokens.doc import Doc
 import os
 
+
 class BaseDocReader(object):
     """
     A base class for document reader, define interfaces for subclasses to inherent from
     """
 
     def __init__(self, nlp: Language = None, support_overlap: bool = False,
-                 log_level: int = logging.WARNING, encoding:str=None, **kwargs):
+                 log_level: int = logging.WARNING, encoding: str = None, **kwargs):
         """
 
         :param nlp: a SpaCy language model
@@ -26,7 +27,7 @@ class BaseDocReader(object):
         self.nlp = nlp
         self.txt = None
         self.anno = None
-        self.encoding=encoding
+        self.encoding = encoding
         self.support_overlap = support_overlap
         self.set_logger(log_level)
         if not Doc.has_extension('doc_name'):
@@ -96,7 +97,7 @@ class BaseDocReader(object):
         """
         self.get_contents(txt_file=txt_file)
         doc = self.nlp(self.txt)
-        doc._.doc_name=os.path.basename(str(txt_file))
+        doc._.doc_name = os.path.basename(str(txt_file))
         if self.support_overlap:
             if not doc.has_extension("concepts"):
                 doc.set_extension("concepts", default=OrderedDict())
@@ -193,19 +194,16 @@ class BaseDirReader:
     A base class for directory reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, txt_dir: Union[str, Path], txt_extension: str = 'txt',
+    def __init__(self, txt_extension: str = 'txt',
                  nlp: Language = None,
                  docReaderClass: Type = None, recursive: bool = False, **kwargs):
         """
-
-        :param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation content are saved in the same file).
         :param txt_extension: the text file extension name (default is 'txt').
         :param nlp: a SpaCy language model.
         :param docReaderClass: a DocReader class that can be initiated.
         :param recursive: whether read file recursively down to the subdirectories.
         :param kwargs: other parameters that need to pass on to this DirReader or docReaderClass above
         """
-        self.txt_dir = self.check_dir_validity(txt_dir)
         self.txt_extension = txt_extension
         self.recursive = recursive
         if docReaderClass is None or not issubclass(docReaderClass, BaseDocReader):
@@ -232,11 +230,16 @@ class BaseDirReader:
                 return None
         return dir
 
-    def read(self) -> List[Doc]:
+    def read(self, txt_dir: Union[str, Path]) -> List[Doc]:
         """
         Read text files and annotation files, return a list of SpaCy Doc, need to be implemented in subclasses
+        :param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation content are saved in the same file).
+        :return: a list of SpaCy Docs
         """
-        txt_files = self.list_files(self.txt_dir, self.txt_extension)
+        txt_dir = self.check_dir_validity(txt_dir)
+        if txt_dir is None:
+            return []
+        txt_files = self.list_files(txt_dir, self.txt_extension, self.recursive)
         docs = []
         for txt_file in txt_files:
             try:
@@ -247,8 +250,8 @@ class BaseDirReader:
             pass
         return docs
 
-    def list_files(self, input_dir_path: Path, file_extension: str) -> List[Path]:
-        if self.recursive:
+    def list_files(self, input_dir_path: Path, file_extension: str, recursive: bool = False) -> List[Path]:
+        if recursive:
             files = list(input_dir_path.rglob('*.' + file_extension))
         else:
             files = list(input_dir_path.glob('*.' + file_extension))
