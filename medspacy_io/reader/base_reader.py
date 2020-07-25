@@ -1,11 +1,11 @@
 import logging
 from collections import OrderedDict
 from pathlib import Path
-from typing import List, Union, Type, Tuple
+from typing import List, Union, Type
 
 from spacy.language import Language
 from spacy.tokens.doc import Doc
-import os
+
 
 class BaseDocReader(object):
     """
@@ -13,11 +13,21 @@ class BaseDocReader(object):
     """
 
     def __init__(self, nlp: Language = None, support_overlap: bool = False,
-                 log_level: int = logging.WARNING, encoding:str=None, **kwargs):
+                 log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
+                 **kwargs):
         """
 
-        :param nlp: a SpaCy language model
-        :param kwargs: other parameters
+        @param nlp: Spacy Language model
+        @param support_overlap: whether need to support overlapped annotations
+        @param log_level: logging level configuration
+        @param encoding: txt encoding
+        @param doc_name_depth: depth of parent directories to add into doc_name
+                default is 0: only use file name
+                1: use 1 level parent directory name + file name
+                -1: use full absolution path
+                if you are dealing with multiple directories,this is helpful to
+                locate the original files
+        @param kwargs:other parameters
         """
         for param_name, value in kwargs.items():
             setattr(self, param_name, value)
@@ -26,7 +36,8 @@ class BaseDocReader(object):
         self.nlp = nlp
         self.txt = None
         self.anno = None
-        self.encoding=encoding
+        self.encoding = encoding
+        self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
         self.set_logger(log_level)
         if not Doc.has_extension('doc_name'):
@@ -96,11 +107,25 @@ class BaseDocReader(object):
         """
         self.get_contents(txt_file=txt_file)
         doc = self.nlp(self.txt)
-        doc._.doc_name=os.path.basename(str(txt_file))
+        doc._.doc_name = self.get_doc_name(txt_file, self.doc_name_depth)
         if self.support_overlap:
             if not doc.has_extension("concepts"):
                 doc.set_extension("concepts", default=OrderedDict())
         return self.process(doc)
+
+    def get_doc_name(self, txt_file: Union[str, Path], doc_name_depth: int = 0) -> str:
+        """
+        @param txt_file: the path of txt file (annotation file's location will be inferred )
+        @return: a string to put in the doc_name
+        """
+        txt_file_path = txt_file if isinstance(txt_file, Path) else Path(txt_file)
+        base_name = txt_file_path.name
+        if doc_name_depth == -1:
+            base_name = str(txt_file_path.absolute())
+        elif doc_name_depth > 0:
+            base_name = str(txt_file_path.absolute() \
+                .relative_to(txt_file_path.absolute().parents[doc_name_depth]))
+        return base_name
 
     def process(self, doc):
         """:arg a SpaCy Doc, must be implemented in the subclass."""
