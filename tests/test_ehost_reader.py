@@ -39,6 +39,18 @@ class TestEhostReader(unittest.TestCase):
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
         self.eval(doc)
 
+        def test_read_doc_name(self):
+            ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
+        doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
+        assert(doc._.doc_name=='doc1.txt')
+        ereader.doc_name_depth=1
+        doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
+        assert (doc._.doc_name==r'corpus/doc1.txt')
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
+                                 doc_name_depth=2)
+        doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
+        assert (doc._.doc_name==r'ehost_test_corpus/corpus/doc1.txt')
+
     def test_read_doc_name(self):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
