@@ -15,7 +15,19 @@
     <Pre_Defined_Dictionary_DifferentWeight>false</Pre_Defined_Dictionary_DifferentWeight>
     <PreAnnotated_Dictionaries Owner="NLP_Assistant" />
     <attributeDefs />
-    <Relationship_Rules />
+    <Relationship_Rules>
+        <Relationship_Rule>
+            <Name>Rel_A</Name>
+            <Definition>((Exclusions))((Purulent))</Definition>
+            <attributeDefs>
+                <attributeDef>
+                    <Name>rel_attr</Name>
+                    <attributeDefOptionDef>rav1</attributeDefOptionDef>
+                    <attributeDefOptionDef>rav2</attributeDefOptionDef>
+                </attributeDef>
+            </attributeDefs>
+        </Relationship_Rule>
+    </Relationship_Rules>
     <classDefs>
         <classDef>
             <Name>Purulent</Name>

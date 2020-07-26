@@ -1,10 +1,8 @@
 import logging
-from collections import OrderedDict
+from collections import OrderedDict, _OrderedDictItemsView
 from pathlib import Path
-from typing import Union, Tuple, Type
+from typing import Union, Tuple, Set
 
-from lxml import etree
-from lxml.etree import Element, iterparse
 from spacy.language import Language
 from spacy.tokens.span import Span
 
@@ -15,297 +13,215 @@ class BratDocReader(BaseDocReader):
     """ This is a subclass of BaseDocReader to read in eHOST format files and generate SpaCy Docs
     """
 
-    def __init__(self, nlp: Language = None, support_overlap: bool = False, use_adjudication: bool = False,
+    def __init__(self, nlp: Language = None, support_overlap: bool = False,
+                 log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
                  schema_file: Union[str, Path] = '', store_anno_string: bool = False,
-                 log_level: bool = logging.WARNING, encoding:str=None, **kwargs):
+                 **kwargs):
         """
 
-        :param nlp: a SpaCy language model
-        :param support_overlap: if the EhostDocReader need to support reading from overlapped annotations.
-            Because SpaCy's Doc.ents does not allows overlapped Spans, to support overlapping, Spans need to be stored
-            somewhere else----Doc._.concepts
-        :param use_adjudication: if read annotations from adjudication folder
-        :param schema_file: initiate Span attributes using eHOST schema configuration file
-        :param store_anno_string: whether read annotated string from annotations to double check parsed Span's correction
-        :param log_level: set the logger's logging level. TO debug, set to logging.DEBUG
+        @param nlp: Spacy Language model
+        @param support_overlap: whether need to support overlapped annotations
+        @param log_level: logging level configuration
+        @param encoding: txt encoding
+        @param doc_name_depth: depth of parent directories to add into doc_name
+                default is 0: only use file name
+                1: use 1 level parent directory name + file name
+                -1: use full absolution path
+                if you are dealing with multiple directories,this is helpful to
+                locate the original files
+        @param schema_file: initiate Span attributes using eHOST schema configuration file
+        @param store_anno_string: whether read annotated string from annotations to double check parsed Span's correction
+        @param kwargs:other parameters
         """
         self.schema_set = False
-        self.set_attributes(schema_file=schema_file)
+        self.attr_names = self.set_attributes(schema_file=schema_file, encoding=encoding)
         if store_anno_string:
             if not Span.has_extension("span_txt"):
                 Span.set_extension("span_txt", default="")
-        super().__init__(nlp=nlp, support_overlap=support_overlap, use_adjudication=use_adjudication,
-                         store_anno_string=store_anno_string, log_level=log_level,encoding=encoding, **kwargs)
+        super().__init__(nlp=nlp, support_overlap=support_overlap,
+                         log_level=log_level, encoding=encoding, doc_name_depth=doc_name_depth,
+                         schema_file=schema_file, store_anno_string=store_anno_string, **kwargs)
         pass
 
-    def set_attributes(self, schema_file: Union[str, Path] = ''):
+    def set_attributes(self, schema_file: Union[str, Path] = '', encoding: str = None) -> Set:
         """
+
+
         The current version SpaCy doesn't differentiate attributes for different annotation types.
         Thus, any attributes extended here will be applied to all Spans.
-        :arg schema_file: initiate Span attributes using eHOST schema configuration file
-
+        @param schema_file: initiate Span attributes using eHOST schema configuration file
+        @param encoding: text encoding
+        @return: a set of attribute names
         """
         schema_file = self.check_file_validity(schema_file, False)
         attr_names = set()
-        if schema_file is not None:
-            root = etree.parse(str(schema_file.absolute()))
-            for attr_def in root.iter("attributeDef"):
-                name = attr_def[0].text.replace(' ', '_')
-                default_value = attr_def[2].text
-                if name not in attr_names and not Span.has_extension(name):
-                    Span.set_extension(name, default=default_value)
-                    attr_names.add(name)
+        attr_conf_start = False
+        if schema_file is not None and schema_file.name.endswith("conf"):
+            for row in schema_file.read_text(encoding=encoding).split("\n"):
+                if len(row.strip()) == 0 or row[0] == '#':
+                    continue
+                if row.startswith(r'[attributes]'):
+                    attr_conf_start = True
+                    continue
+                elif row[0] == '[':
+                    attr_conf_start = False
+                if attr_conf_start:
+                    # [attributes]
+                    # Negation        Arg:<EVENT>
+                    # Confidence        Arg:<EVENT>, Value:Possible|Likely|Certain
+                    name = row.split('        ')[0]
+                    default_value = None
+                    if name not in attr_names and not Span.has_extension(name):
+                        Span.set_extension(name, default=default_value)
+                        attr_names.add(name)
             self.schema_set = True
-        pass
-
-    def get_anno_content(self, txt_file: Path) -> str:
-        """
-        :arg txt_file from the text file path, infer knowtator.xml file path
-        To use lxml's iterparse, just keep the path string here instead of reading the content
-        """
-        anno_file = self.infer_anno_file_path(txt_file)
-        self.check_file_validity(anno_file)
-        return str(anno_file.absolute())
+        return attr_names
 
     def infer_anno_file_path(self, txt_file: Path) -> Path:
+        """
+        From the path of the text file, infer the corresponding annotation file. Need to be implemented for each subclass,
+        as different annotation format use different conventions to store annotation files and txt files
+        @param txt_file: the Path of a txt file
+        @return: the Path of the corresponding annotation file
+        """
         txt_file_name = txt_file.name
-        anno_file_name = txt_file_name + '.knowtator.xml'
-        if not self.use_adjudication:
-            anno_file = Path(txt_file.parent.parent, 'saved', anno_file_name)
-        else:
-            anno_file = Path(txt_file.parent.parent, 'adjudication', anno_file_name)
+        anno_file_name = txt_file_name[:-4] + '.ann'
+        anno_file = Path(txt_file.parent, anno_file_name)
         self.check_file_validity(anno_file)
         return anno_file
 
-    def process_without_overlaps(self, doc):
+    def parse_to_dicts(self, anno_str: str, sort_spans: bool = False) -> Tuple[
+        _OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
         """
-        Take in a SpaCy doc, add eHOST annotation(Span)s to doc.ents.
-        This function doesn't support overlapped annotations.
-         :arg doc: a SpaCy doc
+        Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
+        @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
+        @param sort_spans: whether sort the parsed spans
+        @return: A Tuple of following items:
+             sorted_spans: a sorted OrderedDict Items ( spans[entity_id] = (start, end, span_text))
+             classes: a OrderedDict to map a entity id to [entity label, [attr_ids]]
+             attributes: a OrderedDict to map a attribute id to (attribute_name, attribute_value)
+             relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
         """
-        sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
-        existing_entities = list(doc.ents)
-        new_entities = list()
-        # token_left_bound = 0
-        token_right_bound = len(doc) - 1
-        token_start = -1
-        token_end = -1
-        for id, span_tuple in sorted_span:
-            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
-            # binary search is used here to speed up
-            if self.store_anno_string:
-                start, end, span_txt = span_tuple
-            else:
-                start, end = span_tuple
-            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
-            # binary search is used here to speed up
-            if start < doc[0].idx:
-                # If the annotation fall into a span that is before the 1st Spacy token, adjust the span to the 1st
-                # token
-                token_start = 0
-                token_end = 1
-            elif token_start >= token_right_bound:
-                # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
-                # token
-                token_start = token_right_bound - 1
-                token_end = token_right_bound
-            else:
-                token_start = self.find_start_token(start, token_start, token_right_bound, doc)
-                if end >= doc[-1].idx + doc[-1].__len__():
-                    token_end = token_right_bound +1
-                else:
-                    token_end = self.find_end_token(end, token_start, token_right_bound, doc)
-            if token_start < 0 or token_start >= token_right_bound or token_end < 0 or token_end > token_right_bound:
-                raise ValueError(
-                    "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
-                    "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
-            if token_start >= 0 and token_end > 0:
-                span = Span(doc, token_start, token_end, label=classes[id][0])
-                for attr_id in classes[id][1]:
-                    attr_name = attributes[attr_id][0]
-                    attr_value = attributes[attr_id][1]
-                    setattr(span._, attr_name, attr_value)
-                if self.store_anno_string and span_txt is not None:
-                    setattr(span._, "span_txt", span_txt)
-                new_entities.append(span)
-                token_start = token_end
-            else:
-                raise OverflowError(
-                    'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
-                                                                                                end))
-            pass
-        doc.ents = existing_entities + new_entities
-        return doc
-
-    def process_support_overlaps(self, doc):
-        """
-        Take in a SpaCy doc, add eHOST annotation(Span)s. This function supports adding overlapped annotations.
-         :arg doc: a SpaCy doc
-        """
-        sorted_span, classes, attributes = self.parse_to_dicts(self.anno, sort_spans=True)
-        existing_concepts: dict = doc._.concepts
-        # token_left_bound = 0
-        previous_abs_end = 0
-        token_right_bound = len(doc) - 1
-        token_start = -1
-        token_end = -1
-        for id, span_tuple in sorted_span:
-            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
-            # binary search is used here to speed up
-            if self.store_anno_string:
-                start, end, span_txt = span_tuple
-            else:
-                start, end = span_tuple
-            if start < doc[0].idx:
-                # If the annotation fall into a span that is before the 1st Spacy token, adjust the span to the 1st
-                # token
-                token_start = 0
-                token_end = 1
-            elif token_start >= token_right_bound:
-                # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
-                # token
-                self.logger.debug("token_start {} >= token_right_bound {}".format(token_start,token_right_bound))
-                token_start = token_right_bound
-                token_end = token_right_bound+1
-            else:
-                # if start < previous_abs_end:
-                #     self.logger.debug("To find {} between token_start - 1({}[{}]) and  token_right_bound({}[{}])"
-                #                       .format(start, token_start-1, doc[token_start-1].idx,
-                #                               token_right_bound, doc[token_right_bound].idx), )
-                #     token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0,
-                #                                         token_right_bound, doc)
-                #     self.logger.debug('\tfind token_start={}[{}]'.format(token_start, doc[token_start].idx))
-                #
-                # else:
-                self.logger.debug("To find {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
-                                  .format(start, token_start , doc[token_start ].idx,
-                                          token_right_bound, doc[token_right_bound].idx), )
-                token_start = self.find_start_token(start, token_start, token_right_bound, doc)
-                self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
-                if end >= doc[-1].idx + doc[-1].__len__():
-                    self.logger.debug("end  ({}) >= doc[-1].idx ({}) + doc[-1].__len__() ({})".format(end, doc[-1].idx , doc[-1].__len__()))
-                    token_end = token_right_bound+1
-                else:
-                    self.logger.debug("To find token_end starts from {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
-                                      .format(end, token_start, doc[token_start].idx,
-                                              token_right_bound, doc[token_right_bound].idx))
-                    token_end = self.find_end_token(end, token_start, token_right_bound, doc)
-                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end]))
-            if token_start >= 0 and token_end > 0:
-                span = Span(doc, token_start, token_end, label=classes[id][0])
-                if self.logger.isEnabledFor(logging.DEBUG):
-                    import re
-                    if re.sub('\s+',' ',span._.span_txt) != re.sub('\s+',' ',str(span)):
-                        self.logger.debug('{}[{}:{}]\n\t{}<>\n\t{}<>'.format(classes[id][0],token_start,token_end,re.sub('\s+',' ',span._.span_txt), re.sub('\s+',' ',str(span))))
-                for attr_id in classes[id][1]:
-                    attr_name = attributes[attr_id][0]
-                    attr_value = attributes[attr_id][1]
-                    setattr(span._, attr_name, attr_value)
-                if self.store_anno_string and span_txt is not None:
-                    setattr(span._, "span_txt", span_txt)
-                if classes[id][0] not in existing_concepts:
-                    existing_concepts[classes[id][0]] = list()
-                existing_concepts[classes[id][0]].append(span)
-                # token_start = token_end
-                previous_abs_end = token_start
-
-            else:
-                raise OverflowError(
-                    'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
-                                                                                                end))
-            pass
-        return doc
-
-    def parse_to_dicts(self, xml_file: str, sort_spans: bool = False) -> Tuple[OrderedDict, OrderedDict]:
-        iter = etree.iterparse(xml_file, events=('start',))
-        # this doesn't seem elegant, but is said to be the fastest way
         spans = OrderedDict()
-        classes = dict()
         attributes = OrderedDict()
-        for event, ele in iter:
-            if ele.tag == 'annotation':
-                id, start, end, span_text = self.parse_annotation_tag(ele, iter)
+        classes = OrderedDict()
+        relations = OrderedDict()
+        for row in anno_str.split('\n'):
+            if len(row.strip()) == 0 or row[0] == '#':
+                continue
+            if row[0] == 'T':
+                entity_id, label, start, end, span_text = self.parse_annotation_tag(row)
                 if self.store_anno_string:
-                    spans[id] = (start, end, span_text)
+                    spans[entity_id] = (start, end, span_text)
                 else:
-                    spans[id] = (start, end)
-            elif ele.tag == 'stringSlotMention':
-                attr_id, attr, value = self.parse_attribute_tag(ele, iter)
+                    spans[entity_id] = (start, end)
+                if entity_id not in classes:
+                    classes[entity_id] = ['', []]
+                classes[entity_id][0] = label
+            elif row[0] == 'A':
+                attr_id, entity_id, attr, value = self.parse_attribute_tag(row)
                 attributes[attr_id] = (attr, value)
-            elif ele.tag == 'classMention':
-                # <classMention id="EHOST_Instance_1">
-                #   <hasSlotMention id="EHOST_Instance_8"/>
-                #   <mentionClass id="Purulent">pain</mentionClass>
-                # some annotations don't have "hasSlotMention" element
-                # </classMention>
-                id = ele.get('id')
-            elif ele.tag == 'mentionClass':
-                class_tag = ele.get('id')
-                if id not in classes:
-                    classes[id] = ['', []]
-                classes[id][0] = class_tag
-            elif ele.tag == 'hasSlotMention':
-                if id not in classes:
-                    classes[id] = ['', []]
-                classes[id][1].append(ele.get('id'))
+                if entity_id not in classes:
+                    classes[entity_id] = ['', []]
+                classes[entity_id][1].append(attr_id)
+            elif row[0] == 'R' or row[0] == 'E':
+                rel_id, label, components = self.parse_relation_tag(row)
+                if rel_id is not None:
+                    relations[rel_id] = (label, components)
         if sort_spans:
             spans = sorted(spans.items(), key=lambda x: x[1][0])
-        return spans, classes, attributes
+        else:
+            spans = spans.items()
+        return spans, classes, attributes, relations
 
-    # <annotation>
-    #   <mention id="EHOST_Instance_1"/>
-    #   <annotator id="eHOST_2010">sjl</annotator>
-    #   <span start="232" end="236"/>
-    #   <spannedText>pain</spannedText>
-    #   <creationDate>Sun Apr 19 19:30:11 MDT 2020</creationDate>
-    # </annotation>
-    def parse_annotation_tag(self, ele: Element, iter: iterparse) -> Tuple:
-        id = None
-        start = -1
-        end = -1
-        span_text = None
-        for i in range(0, 4):
-            eve, child = iter.__next__()
-            if child.tag == 'mention':
-                id = child.get('id')
-            elif child.tag == 'span':
-                start = int(child.get('start'))
-                end = int(child.get('end'))
-            elif child.tag == 'spannedText':
-                span_text = child.text
-        return id, start, end, span_text
+    # T1	Gene_expression 447 457	expression
+    # T9	Protein 546 557;565 570	complicated panic
 
-    # <stringSlotMention id="EHOST_Instance_8">
-    #   <mentionSlot id="status"/>
-    #   <stringSlotMentionValue value="present"/>
-    # </stringSlotMention>
-    def parse_attribute_tag(self, ele: Element, iter: iterparse) -> Tuple:
-        id = ele.get('id')
-        attr = ''
-        value = ''
-        for i in range(0, 2):
-            eve, child = iter.__next__()
-            if child.tag == 'mentionSlot':
-                attr = child.get('id')
+    def parse_annotation_tag(self, row: str) -> Tuple:
+        """
+
+        @param row: a string of annotation content row that define an entity
+        @return: a Tuple of (annotation_id, label, absolute start offset, absolute end offset, covered span text)
+        """
+        elements = row.split('\t')
+        if len(elements) < 3:
+            self.logger.warning("Entity annotation format error: " + row)
+        id = elements[0]
+        span_text = elements[2]
+        anno = elements[1].split(' ')
+        if len(anno) < 3:
+            self.logger.warning("Entity annotation format error: " + row)
+        label = anno[0]
+        start = int(anno[1])
+        end = int(anno[-1])
+        return id, label, start, end, span_text
+
+    # A1	Confidence E2 Possible
+    # A6	Negation E5
+    def parse_attribute_tag(self, row: str) -> Tuple:
+        """
+
+        @param row: a string of annotation content row that define an attribute
+        @return: a Tuple of (attribute_id, corresponding entity id, attribute_name, attribute_value)
+        """
+        elements = row.split('\t')
+        if len(elements) < 2:
+            self.logger.warning("Attribute annotation format error: " + row)
+        attr_id = elements[0]
+        anno = elements[1].split(' ')
+        if len(anno) < 2:
+            self.logger.warning("Attribute annotation format error: " + row)
+        entity_id = anno[1]
+        attr = anno[0]
+        if len(anno) == 2:
+            value = True
+        else:
+            value = anno[2]
+        return attr_id, entity_id, attr, value
+
+    # R1	Part-of Arg1:T9 Arg2:T11
+    # E1	Gene_expression:T1
+    # E1	Gene_expression:T1 Theme:T2
+    # E2	Negative_regulation:T3 Cause:E1 Theme:E3
+    def parse_relation_tag(self, row: str) -> Tuple:
+        """
+
+        @param row:a string of annotation content row that define a relationship
+        @return: a Tuple of (relation_id, (components ids contained in this relationship))
+        """
+        elements = row.strip().split('\t')
+        rel_id = elements[0]
+        anno = elements[1].split(' ')
+        label = None
+        if row[0] == 'R':
+            label = anno[0]
+            components = (anno[1].split(':')[1], anno[2].split(':')[1])
+        elif row[0] == 'E':
+            if len(anno) == 1:
+                return (None, None, None)
             else:
-                value = child.get('value')
-        return id, attr, value
+                l = []
+                c = []
+                for comp in anno:
+                    atom = comp.split(':')
+                    l.append(atom[0])
+                    c.append(atom[1])
+                l.sort()
+                label = '+'.join(l)
+                components = tuple(c)
+        return rel_id, label, components
 
 
 class BratDirReader(BaseDirReader):
-    def __init__(self, txt_dir: Union[str, Path], txt_extension: str = 'txt',
-                 nlp: Language = None, docReaderClass: Type = BratDocReader, support_overlap: bool = False,
-                 recursive: bool = False, use_adjudication: bool = False,
-                 schema_file: Union[str, Path] = '', **kwargs):
+    def __init__(self, txt_extension: str = 'txt', recursive: bool = False,
+                 nlp: Language = None, **kwargs):
         """
-        :param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation
-        content are saved in the same file). :param txt_extension: the text file extension name (default is 'txt').
-        :param nlp: a SpaCy language model :param docReaderClass: a DocReader class that can be initiated. :param
-        recursive: whether read file recursively down to the subdirectories. :param use_adjudication: if read
-        annotations from adjudication folder :param schema_file: initiate Span attributes using eHOST schema
-        configuration file
+
+        @param txt_extension: the text file extension name (default is 'txt').
+        @param recursive: whether read file recursively down to the subdirectories.
+        @param nlp: a SpaCy language model
+        @param kwargs:other parameters to initiate BratDocReader
         """
-        super().__init__(txt_dir=txt_dir, support_overlap=support_overlap, txt_extension=txt_extension, nlp=nlp,
-                         docReaderClass=docReaderClass, recursive=recursive, use_adjudication=use_adjudication,
-                         schema_file=schema_file, **kwargs)
+        super().__init__(txt_extension=txt_extension, recursive=recursive, nlp=nlp,
+                         docReaderClass=BratDocReader, **kwargs)
         pass

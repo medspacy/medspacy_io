@@ -1,10 +1,11 @@
 import logging
-from collections import OrderedDict
+from collections import OrderedDict, _OrderedDictItemsView
 from pathlib import Path
-from typing import List, Union, Type
+from typing import List, Union, Type, Tuple
 
 from spacy.language import Language
 from spacy.tokens.doc import Doc
+from spacy.tokens.span import Span
 
 
 class BaseDocReader(object):
@@ -34,15 +35,12 @@ class BaseDocReader(object):
         if nlp is None:
             raise NameError('parameter "nlp" need to be defined')
         self.nlp = nlp
-        self.txt = None
-        self.anno = None
         self.encoding = encoding
         self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
         self.set_logger(log_level)
         if not Doc.has_extension('doc_name'):
             Doc.set_extension('doc_name', default='')
-
         pass
 
     def set_logger(self, level: int = logging.DEBUG):
@@ -59,8 +57,8 @@ class BaseDocReader(object):
     def get_txt_content(self, txt_file: Path) -> str:
         """
         May need to be overwritten, if the txt_file is not a txt file, e.g. an xmi file
-        :param txt_file: the path of a text file
-        :return: the content of text file
+        @param txt_file: the path of a text file
+        @return: the content of text file
         """
         return Path(txt_file).read_text(encoding=self.encoding)
 
@@ -69,21 +67,29 @@ class BaseDocReader(object):
         Either this method or infer_anno_file_path must be overwritten, as different annotation format
         use different conventions to store annotation files and text files (different in relative paths, or use a
         single file to store both of them)
-        :param txt_file: the path of a text file
-        :return: the content of text file
+        @param txt_file: the path of a text file
+        @return: the content of the corresponding annotation file (for xml files, need to overwrite this function
+        to return the file path string instead)
         """
         anno_file = self.infer_anno_file_path(txt_file)
-        self.check_file_validity(anno_file)
         return Path(anno_file).read_text(encoding=self.encoding)
 
     def infer_anno_file_path(self, txt_file: Path) -> Path:
         """
         From the path of the text file, infer the corresponding annotation file. Need to be implemented for each subclass,
         as different annotation format use different conventions to store annotation files and txt files
+        @param txt_file: the Path of a txt file
+        @return: the Path of the corresponding annotation file
         """
         return None
 
     def check_file_validity(self, file: Union[str, Path], raise_error: bool = True) -> Path:
+        """
+
+        @param file: a string or Path of target file path
+        @param raise_error: pause the program if an error is encountered
+        @return: Path of the file
+        """
         if file is None or (isinstance(file, str) and len(file) == 0):
             if raise_error:
                 raise NameError(file)
@@ -102,21 +108,21 @@ class BaseDocReader(object):
         """
         Read annotations and return a Spacy Doc, need to be implemented in subclasses
 
-        :param txt_file: the text file path in an annotation project, where the corresponding
+        @param txt_file: the text file path in an annotation project, where the corresponding
          annotation file path can be inferred through method: infer_anno_file_path
         """
-        self.get_contents(txt_file=txt_file)
-        doc = self.nlp(self.txt)
+        txt, anno = self.get_contents(txt_file=txt_file)
+        doc = self.nlp(txt)
         doc._.doc_name = self.get_doc_name(txt_file, self.doc_name_depth)
         if self.support_overlap:
             if not doc.has_extension("concepts"):
                 doc.set_extension("concepts", default=OrderedDict())
-        return self.process(doc)
+        return self.process(doc, anno)
 
     def get_doc_name(self, txt_file: Union[str, Path], doc_name_depth: int = 0) -> str:
         """
         @param txt_file: the path of txt file (annotation file's location will be inferred )
-        @return: a string to put in the doc_name
+        @return: a string to put in the Doc._.doc_name
         """
         txt_file_path = txt_file if isinstance(txt_file, Path) else Path(txt_file)
         base_name = txt_file_path.name
@@ -127,33 +133,207 @@ class BaseDocReader(object):
                             .relative_to(txt_file_path.absolute().parents[doc_name_depth]))
         return base_name
 
-    def process(self, doc):
-        """:arg a SpaCy Doc, must be implemented in the subclass."""
-        if self.support_overlap:
-            return self.process_support_overlaps(doc)
-        else:
-            return self.process_without_overlaps(doc)
+    def process(self, doc: Doc, anno: str) -> Doc:
+        """
 
-    def process_without_overlaps(self, doc):
-        """:arg a SpaCy Doc, can be implemented in the subclass as needed.
+        @param doc: An initiated SpaCy Doc
+        @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
+        @return: Annotation-added SpaCy Doc
+        """
+        sorted_span, classes, attributes, relations = self.parse_to_dicts(anno, sort_spans=True)
+        if self.support_overlap:
+            return self.process_support_overlaps(doc, sorted_span, classes, attributes, relations)
+        else:
+            return self.process_without_overlaps(doc, sorted_span, classes, attributes, relations)
+
+    def parse_to_dicts(self, anno: str, sort_spans: bool = False) -> Tuple[
+        _OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
+        """
+        Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
+        @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
+        @param sort_spans: whether sort the parsed spans
+        @return: A Tuple of following items:
+             sorted_spans: a sorted OrderedDict Items ( spans[entity_id] = (start, end, span_text))
+             classes: a OrderedDict to map a entity id to [entity label, [attr_ids]]
+             attributes: a OrderedDict to map a attribute id to (attribute_name, attribute_value)
+             relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
+        """
+        return (None, None, None, None,)
+
+    def process_without_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
+                                 attributes: OrderedDict,
+                                 relations: OrderedDict) -> Doc:
+        """:arg a SpaCy Doc, can be overwriten by the subclass as needed.
             This function will add spans to doc.ents (defined by SpaCy as default)
             which doesn't allow overlapped annotations.
+            @param doc: initiated SpaCy Doc
+            @param sorted_spans: a sorted OrderedDict Items ( spans[entity_id] = (start, end, span_text))
+            @param classes: a OrderedDict to map a entity id to [entity label, [attr_ids]]
+            @param attributes: a OrderedDict to map a attribute id to (attribute_name, attribute_value)
+            @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
+            @return: annotated Doc
         """
+        existing_entities = list(doc.ents)
+        new_entities = list()
+        # token_left_bound = 0
+        token_right_bound = len(doc) - 1
+        token_start = -1
+        token_end = -1
+        for id, span_tuple in sorted_spans:
+            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
+            # binary search is used here to speed up
+            if self.store_anno_string:
+                start, end, span_txt = span_tuple
+            else:
+                start, end = span_tuple
+            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
+            # binary search is used here to speed up
+            if start < doc[0].idx:
+                # If the annotation fall into a span that is before the 1st Spacy token, adjust the span to the 1st
+                # token
+                token_start = 0
+                token_end = 1
+            elif token_start >= token_right_bound:
+                # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
+                # token
+                token_start = token_right_bound - 1
+                token_end = token_right_bound
+            else:
+                token_start = self.find_start_token(start, token_start, token_right_bound, doc)
+                if end >= doc[-1].idx + doc[-1].__len__():
+                    token_end = token_right_bound + 1
+                else:
+                    token_end = self.find_end_token(end, token_start, token_right_bound, doc)
+            if token_start < 0 or token_start >= token_right_bound or token_end < 0 or token_end > token_right_bound:
+                raise ValueError(
+                    "It is likely your annotations overlapped, which process_without_overlaps doesn't support parsing "
+                    "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
+            if token_start >= 0 and token_end > 0:
+                span = Span(doc, token_start, token_end, label=classes[id][0])
+                for attr_id in classes[id][1]:
+                    if attr_id not in attributes:
+                        continue
+                    attr_name = attributes[attr_id][0]
+                    attr_value = attributes[attr_id][1]
+                    setattr(span._, attr_name, attr_value)
+                if self.store_anno_string and span_txt is not None:
+                    setattr(span._, "span_txt", span_txt)
+                new_entities.append(span)
+                token_start = token_end
+            else:
+                raise OverflowError(
+                    'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
+                                                                                                end))
+            pass
+        doc.ents = existing_entities + new_entities
         return doc
 
-    def process_support_overlaps(self, doc):
-        """:arg a SpaCy Doc, can be implemented in the subclass as needed.
+    def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
+                                 attributes: OrderedDict,
+                                 relations: OrderedDict) -> Doc:
+        """:arg a SpaCy Doc, can be overwriten by the subclass as needed.
             This function will add spans to doc._.concepts (defined in 'read' function above,
             which allows overlapped annotations.
+            @param doc: initiated SpaCy Doc
+            @param sorted_spans: a sorted OrderedDict Items ( spans[entity_id] = (start, end, span_text))
+            @param classes: a OrderedDict to map a entity id to [entity label, [attr_ids]]
+            @param attributes: a OrderedDict to map a attribute id to (attribute_name, attribute_value)
+            @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
+            @return: annotated Doc
         """
+        existing_concepts: dict = doc._.concepts
+        # token_left_bound = 0
+        previous_abs_end = 0
+        token_right_bound = len(doc) - 1
+        token_start = -1
+        token_end = -1
+        for id, span_tuple in sorted_spans:
+            # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
+            # binary search is used here to speed up
+            if self.store_anno_string:
+                start, end, span_txt = span_tuple
+            else:
+                start, end = span_tuple
+            if start < doc[0].idx:
+                # If the annotation fall into a span that is before the 1st Spacy token, adjust the span to the 1st
+                # token
+                token_start = 0
+                token_end = 1
+            elif token_start >= token_right_bound:
+                # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
+                # token
+                self.logger.debug("token_start {} >= token_right_bound {}".format(token_start, token_right_bound))
+                token_start = token_right_bound
+                token_end = token_right_bound + 1
+            else:
+                # if start < previous_abs_end:
+                #     self.logger.debug("To find {} between token_start - 1({}[{}]) and  token_right_bound({}[{}])"
+                #                       .format(start, token_start-1, doc[token_start-1].idx,
+                #                               token_right_bound, doc[token_right_bound].idx), )
+                #     token_start = self.find_start_token(start, token_start - 1 if token_start > 0 else 0,
+                #                                         token_right_bound, doc)
+                #     self.logger.debug('\tfind token_start={}[{}]'.format(token_start, doc[token_start].idx))
+                #
+                # else:
+                self.logger.debug("To find {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
+                                  .format(start, token_start, doc[token_start].idx,
+                                          token_right_bound, doc[token_right_bound].idx), )
+                token_start = self.find_start_token(start, token_start, token_right_bound, doc)
+                self.logger.debug("\tfind start token {}('{}')".format(token_start, doc[token_start]))
+                if end >= doc[-1].idx + doc[-1].__len__():
+                    self.logger.debug("end  ({}) >= doc[-1].idx ({}) + doc[-1].__len__() ({})".format(end, doc[-1].idx,
+                                                                                                      doc[
+                                                                                                          -1].__len__()))
+                    token_end = token_right_bound + 1
+                else:
+                    self.logger.debug(
+                        "To find token_end starts from {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
+                            .format(end, token_start, doc[token_start].idx,
+                                    token_right_bound, doc[token_right_bound].idx))
+                    token_end = self.find_end_token(end, token_start, token_right_bound, doc)
+                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end]))
+            if token_start >= 0 and token_end > 0:
+                span = Span(doc, token_start, token_end, label=classes[id][0])
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    import re
+                    if re.sub('\s+', ' ', span._.span_txt) != re.sub('\s+', ' ', str(span)):
+                        self.logger.debug('{}[{}:{}]\n\t{}<>\n\t{}<>'.format(classes[id][0], token_start, token_end,
+                                                                             re.sub('\s+', ' ', span._.span_txt),
+                                                                             re.sub('\s+', ' ', str(span))))
+                for attr_id in classes[id][1]:
+                    if attr_id not in attributes:
+                        continue
+                    attr_name = attributes[attr_id][0]
+                    attr_value = attributes[attr_id][1]
+                    setattr(span._, attr_name, attr_value)
+                if self.store_anno_string and span_txt is not None:
+                    setattr(span._, "span_txt", span_txt)
+                if classes[id][0] not in existing_concepts:
+                    existing_concepts[classes[id][0]] = list()
+                existing_concepts[classes[id][0]].append(span)
+                # token_start = token_end
+                previous_abs_end = token_start
+
+            else:
+                raise OverflowError(
+                    'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
+                                                                                                end))
+            pass
         return doc
 
-    def get_contents(self, txt_file: Union[str, Path]):
+    def get_contents(self, txt_file: Union[str, Path]) -> Tuple[str, str]:
+        """
+
+        @param txt_file: a string or Path of a text file
+        @return: a string of text file content and corresponding annotation file content (for xml file, return annotation file path instead)
+        """
         txt_file = self.check_file_validity(txt_file)
+        txt = ''
+        anno = ''
         if txt_file is not None:
-            self.txt = self.get_txt_content(txt_file)
-            self.anno = self.get_anno_content(txt_file)
-        pass
+            txt = self.get_txt_content(txt_file)
+            anno = self.get_anno_content(txt_file)
+        return txt, anno
 
     def find_start_token(self, start: int, token_left_bound: int,
                          token_right_bound: int, doc: Doc) -> int:
@@ -218,15 +398,15 @@ class BaseDirReader:
     A base class for directory reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, txt_extension: str = 'txt',
+    def __init__(self, txt_extension: str = 'txt', recursive: bool = False,
                  nlp: Language = None,
-                 docReaderClass: Type = None, recursive: bool = False, **kwargs):
+                 docReaderClass: Type = None, **kwargs):
         """
-        :param txt_extension: the text file extension name (default is 'txt').
-        :param nlp: a SpaCy language model.
-        :param docReaderClass: a DocReader class that can be initiated.
-        :param recursive: whether read file recursively down to the subdirectories.
-        :param kwargs: other parameters that need to pass on to this DirReader or docReaderClass above
+        @param txt_extension: the text file extension name (default is 'txt').
+        @param recursive: whether read file recursively down to the subdirectories.
+        @param nlp: a SpaCy language model.
+        @param docReaderClass: a DocReader class that can be initiated.
+        @param kwargs: other parameters that need to pass on to this DirReader or docReaderClass above
         """
         self.txt_extension = txt_extension
         self.recursive = recursive
@@ -240,6 +420,12 @@ class BaseDirReader:
         pass
 
     def check_dir_validity(self, dir: Union[str, Path], raise_error: bool = True) -> Path:
+        """
+        Check if the given directory is valid
+        @param dir: a string or Path of given directory
+        @param raise_error: whether raise an error if there is
+        @return: the Path of the given directory
+        """
         if dir is None or (isinstance(dir, str) and len(dir) == 0):
             if raise_error:
                 raise NameError(dir)
@@ -257,8 +443,8 @@ class BaseDirReader:
     def read(self, txt_dir: Union[str, Path]) -> List[Doc]:
         """
         Read text files and annotation files, return a list of SpaCy Doc, need to be implemented in subclasses
-        :param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation content are saved in the same file).
-        :return: a list of SpaCy Docs
+        @param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation content are saved in the same file).
+        @return: a list of SpaCy Docs
         """
         txt_dir = self.check_dir_validity(txt_dir)
         if txt_dir is None:

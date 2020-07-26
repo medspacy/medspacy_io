@@ -112,7 +112,7 @@ class TestEhostReader(unittest.TestCase):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         dir_reader = EhostDirReader(nlp=self.nlp, support_overlap=False,
-                                    docReaderClass=EhostDocReader, recursive=True,
+                                     recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
 
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
@@ -126,7 +126,7 @@ class TestEhostReader(unittest.TestCase):
 
     def test_docs_to_sents_df2(self):
         dir_reader = EhostDirReader(nlp=self.nlp, support_overlap=True,
-                                    docReaderClass=EhostDocReader, recursive=True,
+                                     recursive=True,
                                     schema_file='data/ehost_test_corpus2/config/projectschema.xml')
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus2/')
         df = Vectorizer.docs_to_sents_df(docs)

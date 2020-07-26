@@ -1,10 +1,11 @@
 import logging
 import unittest
+
 from spacy.lang.en import English
 from spacy.tokens import Doc
 
-from medspacy_io.reader import EhostDocReader
 from medspacy_io.reader import EhostDirReader
+from medspacy_io.reader import EhostDocReader
 
 
 class TestEhostReader(unittest.TestCase):
@@ -18,7 +19,8 @@ class TestEhostReader(unittest.TestCase):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(nlp=English())
-        spans, classes, attributes = ereader.parse_to_dicts('data/ehost_test_corpus/saved/doc1.txt.knowtator.xml')
+        spans, classes, attributes, relations = ereader.parse_to_dicts(
+            'data/ehost_test_corpus/saved/doc1.txt.knowtator.xml')
         assert (len(spans) == 7)
         assert (len(classes) == 7)
         assert (len(attributes) == 6)
@@ -41,15 +43,16 @@ class TestEhostReader(unittest.TestCase):
 
         def test_read_doc_name(self):
             ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
+
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
-        assert(doc._.doc_name=='doc1.txt')
-        ereader.doc_name_depth=1
+        assert (doc._.doc_name == 'doc1.txt')
+        ereader.doc_name_depth = 1
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
-        assert (doc._.doc_name==r'corpus/doc1.txt')
+        assert (doc._.doc_name == r'corpus/doc1.txt')
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
                                  doc_name_depth=2)
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
-        assert (doc._.doc_name==r'ehost_test_corpus/corpus/doc1.txt')
+        assert (doc._.doc_name == r'ehost_test_corpus/corpus/doc1.txt')
 
     def test_read_doc_name(self):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
@@ -98,8 +101,7 @@ class TestEhostReader(unittest.TestCase):
     def test_dir_reader(self):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
-        dir_reader = EhostDirReader(nlp=English(),
-                                    docReaderClass=EhostDocReader, recursive=True,
+        dir_reader = EhostDirReader(nlp=English(), recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
         assert (len(docs) == 2)
@@ -109,8 +111,7 @@ class TestEhostReader(unittest.TestCase):
     def test_dir_reader2(self):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
-        dir_reader = EhostDirReader(nlp=English(), support_overlap=True,
-                                    docReaderClass=EhostDocReader, recursive=True,
+        dir_reader = EhostDirReader(nlp=English(), support_overlap=True,recursive=True,
                                     schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
         assert (len(docs) == 2)

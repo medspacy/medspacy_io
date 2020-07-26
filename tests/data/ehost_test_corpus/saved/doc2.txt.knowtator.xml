@@ -1,103 +1,103 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<annotations textSource="doc1.txt">
+<annotations textSource="doc2.txt">
     <annotation>
-        <mention id="EHOST_Instance_1" />
+        <mention id="EHOST_Instance_69" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="0" end="5" />
         <spannedText>CHIEF</spannedText>
         <creationDate>Mon Apr 20 02:16:24 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_8">
+    <stringSlotMention id="EHOST_Instance_76">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="purulent" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_1">
-        <hasSlotMention id="EHOST_Instance_8" />
+    <classMention id="EHOST_Instance_69">
+        <hasSlotMention id="EHOST_Instance_76" />
         <mentionClass id="Doc_Level_Purulence_Assessment">CHIEF</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_2" />
+        <mention id="EHOST_Instance_70" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="17" end="31" />
         <spannedText>Abdominal pain</spannedText>
         <creationDate>Mon Apr 20 02:16:28 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_9">
+    <stringSlotMention id="EHOST_Instance_77">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="present" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_2">
-        <hasSlotMention id="EHOST_Instance_9" />
+    <classMention id="EHOST_Instance_70">
+        <hasSlotMention id="EHOST_Instance_77" />
         <mentionClass id="Purulent">Abdominal pain</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_3" />
+        <mention id="EHOST_Instance_71" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="45" end="52" />
         <spannedText>PRESENT</spannedText>
         <creationDate>Mon Apr 20 02:16:33 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_10">
+    <stringSlotMention id="EHOST_Instance_78">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="present" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_3">
-        <hasSlotMention id="EHOST_Instance_10" />
+    <classMention id="EHOST_Instance_71">
+        <hasSlotMention id="EHOST_Instance_78" />
         <mentionClass id="Non-Purulent">PRESENT</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_4" />
+        <mention id="EHOST_Instance_72" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="66" end="73" />
         <spannedText>patient</spannedText>
         <creationDate>Mon Apr 20 02:16:36 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_11">
+    <stringSlotMention id="EHOST_Instance_79">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="performed" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_4">
-        <hasSlotMention id="EHOST_Instance_11" />
+    <classMention id="EHOST_Instance_72">
+        <hasSlotMention id="EHOST_Instance_79" />
         <mentionClass id="Incision_and_Drainage">patient</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_5" />
+        <mention id="EHOST_Instance_73" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="82" end="90" />
         <spannedText>year-old</spannedText>
         <creationDate>Mon Apr 20 02:16:44 MDT 2020</creationDate>
     </annotation>
-    <classMention id="EHOST_Instance_5">
+    <classMention id="EHOST_Instance_73">
         <mentionClass id="PreAnnotated">year-old</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_6" />
+        <mention id="EHOST_Instance_74" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="113" end="127" />
         <spannedText>X. The patient</spannedText>
         <creationDate>Mon Apr 20 02:16:53 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_12">
+    <stringSlotMention id="EHOST_Instance_80">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="present" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_6">
-        <hasSlotMention id="EHOST_Instance_12" />
+    <classMention id="EHOST_Instance_74">
+        <hasSlotMention id="EHOST_Instance_80" />
         <mentionClass id="Nonspecific_SSTI">X. The patient</mentionClass>
     </classMention>
     <annotation>
-        <mention id="EHOST_Instance_7" />
+        <mention id="EHOST_Instance_75" />
         <annotator id="eHOST_2010">sjl</annotator>
         <span start="128" end="137" />
         <spannedText>presented</spannedText>
         <creationDate>Mon Apr 20 02:16:58 MDT 2020</creationDate>
     </annotation>
-    <stringSlotMention id="EHOST_Instance_13">
+    <stringSlotMention id="EHOST_Instance_81">
         <mentionSlot id="status" />
         <stringSlotMentionValue value="present" />
     </stringSlotMention>
-    <classMention id="EHOST_Instance_7">
-        <hasSlotMention id="EHOST_Instance_13" />
+    <classMention id="EHOST_Instance_75">
+        <hasSlotMention id="EHOST_Instance_81" />
         <mentionClass id="Exclusions">presented</mentionClass>
     </classMention>
     <eHOST_Adjudication_Status version="1.0">
