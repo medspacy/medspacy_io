@@ -49,6 +49,9 @@ class EhostWriter:
                  span_attributes=None):
         if annotation_labels is None:
             annotation_labels = set()
+            self._allow_new_labels = True
+        else:
+            self._allow_new_labels = False
         self.annotation_labels = annotation_labels
         self.color_cycle = self._create_color_generator()
         if annotation_color_mapping is None:
@@ -69,9 +72,13 @@ class EhostWriter:
 
         self._i = 0
 
-    def write_docs_to_ehost(self, docs, report_ids, directory, overwrite_directory=True):
+    def write_docs_to_ehost(self, docs, report_ids, directory, schema_file=None, overwrite_directory=True):
         self.prepare_directory(directory, overwrite_directory)
-        self.create_schema_file(directory)
+        if schema_file is None:
+            self.create_schema_file(directory)
+        else:
+            import shutil
+            shutil.copy(schema_file, os.path.join(directory, "config", 'projectschema.xml'))
 
         # Now save the texts
         for (doc, report_id) in zip(docs, report_ids):
@@ -128,19 +135,6 @@ class EhostWriter:
         class_def.append(sub)
         class_defs.append(class_def)
 
-
-
-    #     < attributeDef >
-    #     < Name > is_negated < / Name >
-    #     < is_Linked_to_UMLS_CUICode_and_CUILabel > false < / is_Linked_to_UMLS_CUICode_and_CUILabel >
-    #     < is_Linked_to_UMLS_CUICode > false < / is_Linked_to_UMLS_CUICode >
-    #     < is_Linked_to_UMLS_CUILabel > false < / is_Linked_to_UMLS_CUILabel >
-    #     < defaultValue > false < / defaultValue >
-    #     < attributeDefOptionDef > false < / attributeDefOptionDef >
-    #     < attributeDefOptionDef > true < / attributeDefOptionDef >
-    #
-    # < / attributeDef >
-
     def add_public_attributes(self, xml):
         # Now add the attributes defined in span_attributes
         attribute_defs = xml.find('attributeDefs')
@@ -149,9 +143,9 @@ class EhostWriter:
             name = Element("Name")
             name.text = attr
             attribute_def.append(name)
-            default_value = Element("defaultValue")
-            default_value.text = "false"
-            attribute_def.append(default_value)
+            # default_value = Element("defaultValue")
+            # default_value.text = "false"
+            # attribute_def.append(default_value)
             for value in ["false", "true"]:
                 option_def = Element("attributeDefOptionDef")
                 option_def.text = value
@@ -183,6 +177,8 @@ class EhostWriter:
         xml = etree.fromstring(base_annotations_string.encode())
         # Start with the entity spans
         for ent in doc.ents:
+            if self._allow_new_labels is False and ent.label_ not in self.annotation_labels:
+                continue
             # Start with the span attributes
             slot_mention_ids = []
 
@@ -202,7 +198,9 @@ class EhostWriter:
 
         # Now add optional context modifiers and section headers
         if self.context is True and hasattr(doc._, "context_graph"):
-            for _, modifier in doc._.context_graph.edges:
+            for ent, modifier in doc._.context_graph.edges:
+                if ent.label_ not in self.annotation_labels:
+                    continue
                 if modifier.category not in self.annotation_color_mapping:
                     self.annotation_color_mapping[modifier.category] = DEFAULT_COLOR
                 self.add_annotation(modifier.span, xml, self._i)
@@ -276,7 +274,6 @@ class EhostWriter:
         slot_mention.append(mention_slot)
         mention_slot_value = Element("stringSlotMentionValue", value=value)
         slot_mention.append(mention_slot_value)
-        print(slot_mention)
 
         xml.append(slot_mention)
 
