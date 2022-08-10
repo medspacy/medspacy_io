@@ -116,7 +116,8 @@ class BaseDocReader(object):
         doc._.doc_name = self.get_doc_name(txt_file, self.doc_name_depth)
         if self.support_overlap:
             if not doc.has_extension("concepts"):
-                doc.set_extension("concepts", default=OrderedDict())
+                doc.set_extension("concepts",default = list()) #this list only store the spanGroup names
+                #doc.set_extension("concepts", default=OrderedDict())
         return self.process(doc, anno)
 
     def get_doc_name(self, txt_file: Union[str, Path], doc_name_depth: int = 0) -> str:
@@ -241,7 +242,7 @@ class BaseDocReader(object):
             @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
             @return: annotated Doc
         """
-        existing_concepts: dict = doc._.concepts
+        existing_concepts:list = doc._.concepts #existing_concepts: dict = doc._.concepts
         # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
@@ -309,8 +310,11 @@ class BaseDocReader(object):
                 if self.store_anno_string and span_txt is not None:
                     setattr(span._, "span_txt", span_txt)
                 if classes[id][0] not in existing_concepts:
-                    existing_concepts[classes[id][0]] = list()
-                existing_concepts[classes[id][0]].append(span)
+                    existing_concepts.append(classes[id][0])
+                    doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
+                    #existing_concepts[classes[id][0]] = list()
+                doc.spans[classes[id][0]].append(span)
+                #existing_concepts[classes[id][0]].append(span)
                 # token_start = token_end
                 previous_abs_end = token_start
 
