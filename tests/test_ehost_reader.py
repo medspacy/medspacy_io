@@ -19,7 +19,8 @@ class TestEhostReader(unittest.TestCase):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(nlp=English())
-        spans, classes, attributes, relations = ereader.parse_to_dicts('data/ehost_test_corpus/saved/doc1.txt.knowtator.xml')
+        spans, classes, attributes, relations = ereader.parse_to_dicts(
+            'data/ehost_test_corpus/saved/doc1.txt.knowtator.xml')
         assert (len(spans) == 7)
         assert (len(classes) == 7)
         assert (len(attributes) == 6)
@@ -125,7 +126,7 @@ class TestEhostReader(unittest.TestCase):
             assert ('Incision_and_Drainage' in doc._.concepts)
             assert (str(doc._.concepts['Incision_and_Drainage'][0]) == 'patient')
             assert ('PreAnnotated' in doc._.concepts)
-            assert (str(doc._.concepts['PreAnnotated'][0]) == 'year-old')
+            assert (str(doc._.concepts['PreAnnotated'][0]) == '71-year-old')
             assert ('Nonspecific_SSTI' in doc._.concepts)
             assert (str(doc._.concepts['Nonspecific_SSTI'][0]) == 'X. The patient')
             assert ('Exclusions' in doc._.concepts)
@@ -139,7 +140,7 @@ class TestEhostReader(unittest.TestCase):
         assert (str(doc.ents[3]) == 'patient')
         # there is a slightly mismatch of the token, because SpaCy tokenize '71-year-old' into
         # '71-year', '-', 'old', EhostDocReader adjust the annotation spans to align with the tokens
-        assert (str(doc.ents[4]) == 'year-old')
+        assert (str(doc.ents[4]) == '71-year-old')
         assert (str(doc.ents[5]) == 'X. The patient')
         assert (str(doc.ents[6]) == 'presented')
         assert (doc.ents[0].label_ == 'Doc_Level_Purulence_Assessment')
