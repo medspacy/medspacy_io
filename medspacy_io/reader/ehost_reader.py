@@ -99,7 +99,7 @@ class EhostDocReader(BaseDocReader):
         self.check_file_validity(anno_file)
         return anno_file
 
-    def parse_to_dicts(self, xml_file: str, sort_spans: bool = False) -> Tuple[OrderedDict, OrderedDict]:
+    def parse_to_dicts(self, xml_file: str, sort_spans: bool = False) -> Tuple[OrderedDict, dict, OrderedDict, OrderedDict]:
         """
         Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
         @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
