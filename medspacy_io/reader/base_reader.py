@@ -292,7 +292,9 @@ class BaseDocReader(object):
                             .format(end, token_start, doc[token_start].idx,
                                     token_right_bound, doc[token_right_bound].idx))
                     token_end = self.find_end_token(end, token_start, token_right_bound, doc)
-                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end]))
+                    #print('token_end:',token_end)
+                    #print('doc length:',len(doc))
+                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end-1]))
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
                 if self.logger.isEnabledFor(logging.DEBUG):
