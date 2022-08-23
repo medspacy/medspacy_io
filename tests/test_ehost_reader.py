@@ -70,12 +70,12 @@ class TestEhostReader(unittest.TestCase):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
-        assert (len(doc._.concepts) == 3)
-        assert (len(doc._.concepts['PreAnnotated']) == 1)
+        assert (len(doc.spans) == 3)
+        assert (len(doc.spans['PreAnnotated']) == 1)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
-        assert (len(doc._.concepts) == 7)
-        assert (len(doc._.concepts['Exclusions']) == 2)
-        assert (len(doc._.concepts['Doc_Level_Purulence_Assessment']) == 2)
+        assert (len(doc.spans) == 7)
+        assert (len(doc.spans['Exclusions']) == 2)
+        assert (len(doc.spans['Doc_Level_Purulence_Assessment']) == 2)
 
     def test_check_spans(self):
         if Doc.has_extension("concepts"):
@@ -92,7 +92,7 @@ class TestEhostReader(unittest.TestCase):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True, store_anno_string=True, log_level=logging.DEBUG)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
-        for spans in doc._.concepts.values():
+        for spans in doc.spans.values():
             for span in spans:
                 print(span._.span_txt, '<>', span)
                 assert (span._.span_txt.replace('\n', ' ') in str(span).replace('\n', ' '))
@@ -115,21 +115,21 @@ class TestEhostReader(unittest.TestCase):
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
         assert (len(docs) == 2)
         for doc in docs:
-            assert (len(doc._.concepts) == 7)
-            assert ('Doc_Level_Purulence_Assessment' in doc._.concepts)
-            assert (str(doc._.concepts['Doc_Level_Purulence_Assessment'][0]) == 'CHIEF')
-            assert ('Purulent' in doc._.concepts)
-            assert (str(doc._.concepts['Purulent'][0]) == 'Abdominal pain')
-            assert ('Non-Purulent' in doc._.concepts)
-            assert (str(doc._.concepts['Non-Purulent'][0]) == 'PRESENT')
-            assert ('Incision_and_Drainage' in doc._.concepts)
-            assert (str(doc._.concepts['Incision_and_Drainage'][0]) == 'patient')
-            assert ('PreAnnotated' in doc._.concepts)
-            assert (str(doc._.concepts['PreAnnotated'][0]) == 'year-old')
-            assert ('Nonspecific_SSTI' in doc._.concepts)
-            assert (str(doc._.concepts['Nonspecific_SSTI'][0]) == 'X. The patient')
-            assert ('Exclusions' in doc._.concepts)
-            assert (str(doc._.concepts['Exclusions'][0]) == 'presented')
+            assert (len(doc.spans) == 7)
+            assert ('Doc_Level_Purulence_Assessment' in doc.spans)
+            assert (str(doc.spans['Doc_Level_Purulence_Assessment'][0]) == 'CHIEF')
+            assert ('Purulent' in doc.spans)
+            assert (str(doc.spans['Purulent'][0]) == 'Abdominal pain')
+            assert ('Non-Purulent' in doc.spans)
+            assert (str(doc.spans['Non-Purulent'][0]) == 'PRESENT')
+            assert ('Incision_and_Drainage' in doc.spans)
+            assert (str(doc.spans['Incision_and_Drainage'][0]) == 'patient')
+            assert ('PreAnnotated' in doc.spans)
+            assert (str(doc.spans['PreAnnotated'][0]) == 'year-old')
+            assert ('Nonspecific_SSTI' in doc.spans)
+            assert (str(doc.spans['Nonspecific_SSTI'][0]) == 'X. The patient')
+            assert ('Exclusions' in doc.spans)
+            assert (str(doc.spans['Exclusions'][0]) == 'presented')
 
     def eval(self, doc):
         assert (len(doc.ents) == 7)
