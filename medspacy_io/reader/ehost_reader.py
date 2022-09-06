@@ -51,8 +51,6 @@ class EhostDocReader(BaseDocReader):
 
     def set_attributes(self, schema_file: Union[str, Path] = '', encoding: str = None) -> Set:
         """
-
-
         The current version SpaCy doesn't differentiate attributes for different annotation types.
         Thus, any attributes extended here will be applied to all Spans.
         @param schema_file: initiate Span attributes using eHOST schema configuration file

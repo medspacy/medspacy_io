@@ -39,6 +39,7 @@ class BaseDocReader(object):
         self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
         self.set_logger(log_level)
+        Doc._. = concepts #property object
         if not Doc.has_extension('doc_name'):
             Doc.set_extension('doc_name', default='')
         pass
@@ -147,8 +148,7 @@ class BaseDocReader(object):
         else:
             return self.process_without_overlaps(doc, sorted_span, classes, attributes, relations)
 
-    def parse_to_dicts(self, anno: str, sort_spans: bool = False) -> Tuple[
-        _OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
+    def parse_to_dicts(self, anno: str, sort_spans: bool = False) -> Tuple[_OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
         """
         Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
         @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
@@ -229,6 +229,18 @@ class BaseDocReader(object):
         doc.ents = existing_entities + new_entities
         return doc
 
+    
+    def set_concepts(value):
+        if isinstance(value, dict):
+            print("Warning: 0.1.0.dev34 will be deprecated. Please use latest version!")
+        Doc._.concepts = value
+        
+    def get_concepts(Doc):
+        print('getting concept...')
+        return Doc._.concepts
+        
+    concepts = property(set_concepts,get_concepts)
+    
     def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
                                  attributes: OrderedDict,
                                  relations: OrderedDict) -> Doc:
@@ -242,7 +254,7 @@ class BaseDocReader(object):
             @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
             @return: annotated Doc
         """
-        existing_concepts:list = doc._.concepts #existing_concepts: dict = doc._.concepts
+        #existing_concepts = list() #:list = doc._.concepts #existing_concepts: dict = doc._.concepts
         # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
@@ -311,13 +323,27 @@ class BaseDocReader(object):
                     setattr(span._, attr_name, attr_value)
                 if self.store_anno_string and span_txt is not None:
                     setattr(span._, "span_txt", span_txt)
-                if classes[id][0] not in existing_concepts:
-                    existing_concepts.append(classes[id][0])
-                    doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
-                    #existing_concepts[classes[id][0]] = list()
-                doc.spans[classes[id][0]].append(span)
-                #existing_concepts[classes[id][0]].append(span)
-                # token_start = token_end
+                    
+                #REMARK: Doc._.concept setter should be called at the outside function
+                if isinstance(doc._.concepts, dict):
+                    existing_concepts: dict = doc._.concepts
+                    if classes[id][0] not in existing_concepts:
+                        existing_concepts[classes[id][0]] = list()#initialize a list of spans
+                    existing_concepts[classes[id][0]].append(span)
+                if isinstance(doc._.concepts, list):
+                    existing_concepts: list = doc._.concepts
+                    if classes[id][0] not in existing_concepts:
+                        existing_concepts.append(classes[id][0])
+                        doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
+                    doc.spans[classes[id][0]].append(span)
+                #if classes[id][0] not in existing_concepts:
+                #    existing_concepts.append(classes[id][0])
+                #    doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
+                #    #existing_concepts[classes[id][0]] = list()
+                #doc.spans[classes[id][0]].append(span)
+                ##existing_concepts[classes[id][0]].append(span)
+                ## token_start = token_end
+                
                 previous_abs_end = token_start
 
             else:
