@@ -78,10 +78,10 @@ class TestEhostReader(unittest.TestCase):
     def test_read_overlap(self): #PASSED
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
-        assert (len(doc._.concepts) == 3)
+        assert (len(doc.spans) == 3)
         assert (len(doc.spans['PreAnnotated']) == 1)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
-        assert (len(doc._.concepts) == 7)
+        assert (len(doc.spans) == 7)
         assert (len(doc.spans['Exclusions']) == 2)
         assert (len(doc.spans['Doc_Level_Purulence_Assessment']) == 2)
         
@@ -101,8 +101,8 @@ class TestEhostReader(unittest.TestCase):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True, store_anno_string=True, log_level=logging.DEBUG)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
-        #now doc._.concepts is a list
-        for spanGroup_name in doc._.concepts:
+        #now doc.spans is a list
+        for spanGroup_name in doc.spans:
             for span in doc.spans[spanGroup_name]:
                 print(span._.span_txt, '<>', span)
                 assert (span._.span_txt.replace('\n', ' ') in str(span).replace('\n', ' '))
@@ -123,20 +123,20 @@ class TestEhostReader(unittest.TestCase):
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
         assert (len(docs) == 2)
         for doc in docs:
-            assert (len(doc._.concepts) == 7)
-            assert ('Doc_Level_Purulence_Assessment' in doc._.concepts)
+            assert (len(doc.spans) == 7)
+            assert ('Doc_Level_Purulence_Assessment' in doc.spans)
             assert (str(doc.spans['Doc_Level_Purulence_Assessment'][0]) == 'CHIEF')
-            assert ('Purulent' in doc._.concepts)
+            assert ('Purulent' in doc.spans)
             assert (str(doc.spans['Purulent'][0]) == 'Abdominal pain')
-            assert ('Non-Purulent' in doc._.concepts)
+            assert ('Non-Purulent' in doc.spans)
             assert (str(doc.spans['Non-Purulent'][0]) == 'PRESENT')
-            assert ('Incision_and_Drainage' in doc._.concepts)
+            assert ('Incision_and_Drainage' in doc.spans)
             assert (str(doc.spans['Incision_and_Drainage'][0]) == 'patient')
-            assert ('PreAnnotated' in doc._.concepts)
+            assert ('PreAnnotated' in doc.spans)
             assert (str(doc.spans['PreAnnotated'][0]) == 'year-old')
-            assert ('Nonspecific_SSTI' in doc._.concepts)
+            assert ('Nonspecific_SSTI' in doc.spans)
             assert (str(doc.spans['Nonspecific_SSTI'][0]) == 'X. The patient')
-            assert ('Exclusions' in doc._.concepts)
+            assert ('Exclusions' in doc.spans)
             assert (str(doc.spans['Exclusions'][0]) == 'presented')
         
         
