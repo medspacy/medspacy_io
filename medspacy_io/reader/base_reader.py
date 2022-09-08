@@ -6,15 +6,30 @@ from typing import List, Union, Type, Tuple
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
+import warnings
 
+class decorator(object):
+    def __init__(self, concept = list()):
+        self.concept = concept
+       
+    def set_concepts(self, value):
+        print('setting the type of concept...')
+        if isinstance(value, dict):
+            warnings.warn("Warning: 0.1.0.dev34 will be deprecated. Please use latest version!")
+        self._concept = value
+        
+    def get_concepts(self):
+        print('getting concept...')
+        return self._concept
+        
+    concept = property(get_concepts, set_concepts)
 
 class BaseDocReader(object):
     """
     A base class for document reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, nlp: Language = None, support_overlap: bool = False,
-                 log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
+    def __init__(self, nlp: Language = None, support_overlap: bool = False, new_version: bool = False,log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
                  **kwargs):
         """
 
@@ -38,8 +53,8 @@ class BaseDocReader(object):
         self.encoding = encoding
         self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
+        self.new_version = new_version #new param
         self.set_logger(log_level)
-        Doc._. = concepts #property object
         if not Doc.has_extension('doc_name'):
             Doc.set_extension('doc_name', default='')
         pass
@@ -116,8 +131,16 @@ class BaseDocReader(object):
         doc = self.nlp(txt)
         doc._.doc_name = self.get_doc_name(txt_file, self.doc_name_depth)
         if self.support_overlap:
-            if not doc.has_extension("concepts"):
-                doc.set_extension("concepts",default = list()) #this list only store the spanGroup names
+            print('check if doc has extension concepts:', doc.has_extension("concepts"))
+            if doc.has_extension("concepts"):
+                print(doc._.concepts)
+            if not doc.has_extension("concepts"):#why not remove_extension?
+                print(self.new_version,not self.new_version)
+                if self.new_version:
+                    doc.set_extension("concepts",default = decorator(list()).concept)
+                else:
+                    doc.set_extension("concepts",default = decorator(OrderedDict()).concept)
+                #doc.set_extension("concepts",default = list()) #this list only store the spanGroup names
                 #doc.set_extension("concepts", default=OrderedDict())
         return self.process(doc, anno)
 
@@ -230,20 +253,7 @@ class BaseDocReader(object):
         return doc
 
     
-    def set_concepts(value):
-        if isinstance(value, dict):
-            print("Warning: 0.1.0.dev34 will be deprecated. Please use latest version!")
-        Doc._.concepts = value
-        
-    def get_concepts(Doc):
-        print('getting concept...')
-        return Doc._.concepts
-        
-    concepts = property(set_concepts,get_concepts)
-    
-    def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
-                                 attributes: OrderedDict,
-                                 relations: OrderedDict) -> Doc:
+    def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict, attributes: OrderedDict, relations: OrderedDict) -> Doc:
         """:arg a SpaCy Doc, can be overwriten by the subclass as needed.
             This function will add spans to doc._.concepts (defined in 'read' function above,
             which allows overlapped annotations.
@@ -254,7 +264,8 @@ class BaseDocReader(object):
             @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
             @return: annotated Doc
         """
-        #existing_concepts = list() #:list = doc._.concepts #existing_concepts: dict = doc._.concepts
+        existing_concepts = doc._.concepts #:list = doc._.concepts #existing_concepts: dict = doc._.concepts
+        print('type of existing_concepts:',type(existing_concepts),self.new_version)
         # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
@@ -324,14 +335,11 @@ class BaseDocReader(object):
                 if self.store_anno_string and span_txt is not None:
                     setattr(span._, "span_txt", span_txt)
                     
-                #REMARK: Doc._.concept setter should be called at the outside function
-                if isinstance(doc._.concepts, dict):
-                    existing_concepts: dict = doc._.concepts
+                if isinstance(existing_concepts, dict):
                     if classes[id][0] not in existing_concepts:
                         existing_concepts[classes[id][0]] = list()#initialize a list of spans
                     existing_concepts[classes[id][0]].append(span)
-                if isinstance(doc._.concepts, list):
-                    existing_concepts: list = doc._.concepts
+                if isinstance(existing_concepts, list):
                     if classes[id][0] not in existing_concepts:
                         existing_concepts.append(classes[id][0])
                         doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
