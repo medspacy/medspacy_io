@@ -1,6 +1,10 @@
 import unittest
 from collections import OrderedDict
 
+import sys
+sys.path.append("../") #need to uninstall medspacy-io to test the package code.
+sys.path.append("../medspacy")
+
 from spacy.lang.en import English
 from spacy.tokens.span import Span
 
@@ -16,11 +20,11 @@ class TestEhostReader(unittest.TestCase):
 
     def setUp(self) -> None:
         self.nlp = English()
-        self.nlp.add_pipe(PyRuSHSentencizer('conf/rush_rules.tsv'))
+        self.nlp.add_pipe("medspacy_pyrush")
+
 
     def test_to_sents_df(self):
-        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
-                                 support_overlap=True)
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml', support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         print(len(list(doc.sents)))
         assert (len(doc._.concepts) == 3)
@@ -40,7 +44,7 @@ class TestEhostReader(unittest.TestCase):
         assert (df.shape[1] == 4)
 
     def test_to_sents_nparray(self):
-        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         print(len(list(doc.sents)))
@@ -58,7 +62,7 @@ class TestEhostReader(unittest.TestCase):
         assert (df.shape[1] == 4)
 
     def test_to_sents_df_on_attr_value(self):
-        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         df = Vectorizer.to_sents_df(doc,
@@ -79,7 +83,7 @@ class TestEhostReader(unittest.TestCase):
         assert (df.shape[1] == 4)
 
     def test_to_sents_df_on_attr_value2(self):
-        ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         df = Vectorizer.to_sents_df(doc,
@@ -245,7 +249,7 @@ class TestEhostReader(unittest.TestCase):
         assert(res['PreAnnotated'][1][9]=='PreAnnotated')
         assert(res['PreAnnotated'][1][10]=='PreAnnotated')
         assert(res['PreAnnotated'][1][11]=='PreAnnotated')
-        assert(res['Nonspecific_SSTI'][1][12]=='O')ma
+        assert(res['Nonspecific_SSTI'][1][12]=='O')
         assert(res['Nonspecific_SSTI'][1][17]=='[SEP]')
         assert(res['Nonspecific_SSTI'][1][18]=='Nonspecific_SSTI')
         assert(res['Nonspecific_SSTI'][1][19]=='Nonspecific_SSTI')

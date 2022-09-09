@@ -1,6 +1,12 @@
 import logging
 import unittest
 
+
+import sys
+sys.path.append("../") #need to uninstall medspacy-io to test the package code.
+sys.path.append("../medspacy")
+
+
 from spacy.lang.en import English
 from spacy.tokens import Doc
 
@@ -23,6 +29,7 @@ class TestEhostReader(unittest.TestCase):
         assert (len(spans) == 7)
         assert (len(classes) == 7)
         assert (len(attributes) == 6)
+        assert (len(relations) == 0)
 
     def test_set_attributes(self):
         if Doc.has_extension("concepts"):
@@ -40,9 +47,8 @@ class TestEhostReader(unittest.TestCase):
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
         self.eval(doc)
 
-        def test_read_doc_name(self):
-            ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
-
+    def test_read_doc_name(self):
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
         assert (doc._.doc_name == 'doc1.txt')
         ereader.doc_name_depth = 1
@@ -52,6 +58,36 @@ class TestEhostReader(unittest.TestCase):
                                  doc_name_depth=2)
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
         assert (doc._.doc_name == r'ehost_test_corpus/corpus/doc1.txt')
+        
+            
+    def test_read_overlap_new_version(self): #PASSED
+        if Doc.has_extension("concepts"):
+            Doc.remove_extension("concepts")
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',support_overlap=True,new_version=True)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
+        assert (len(doc.spans) == 3)
+        assert (len(doc.spans['PreAnnotated']) == 1)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
+        assert (len(doc.spans) == 7)
+        assert (len(doc.spans['Exclusions']) == 2)
+        assert (len(doc.spans['Doc_Level_Purulence_Assessment']) == 2)
+        
+    
+    def test_read_overlap_old_version(self):
+        if Doc.has_extension("concepts"):
+            Doc.remove_extension("concepts")
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
+                                 support_overlap=True)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
+        assert (len(doc._.concepts) == 3)
+        assert (len(doc._.concepts['PreAnnotated']) == 1)
+        doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
+        assert (len(doc._.concepts) == 7)
+        assert (len(doc._.concepts['Exclusions']) == 2)
+        assert (len(doc._.concepts['Doc_Level_Purulence_Assessment']) == 2)
+
+
+     
 
     def test_read_doc_name(self):
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml')
@@ -66,31 +102,19 @@ class TestEhostReader(unittest.TestCase):
         assert (doc._.doc_name==r'ehost_test_corpus/corpus/doc1.txt')
 
 
-    def test_read_overlap(self):
-        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
-                                 support_overlap=True)
-        doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
-        assert (len(doc.spans) == 3)
-        assert (len(doc.spans['PreAnnotated']) == 1)
-        doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
-        assert (len(doc.spans) == 7)
-        assert (len(doc.spans['Exclusions']) == 2)
-        assert (len(doc.spans['Doc_Level_Purulence_Assessment']) == 2)
-
     def test_check_spans(self):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
-        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
-                                 support_overlap=False, store_anno_string=True, encoding='UTF8',
-                                 log_level=logging.DEBUG)
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml', support_overlap=False, store_anno_string=True, encoding='UTF8',log_level=logging.DEBUG)
         doc = ereader.read('data/ehost_test_corpus/corpus/doc2.txt')
         for span in doc.ents:
             print(span._.span_txt, '<>', span)
             assert (span._.span_txt.replace('\n', ' ') in str(span).replace('\n', ' '))
 
     def test_check_spans2(self):
-        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
-                                 support_overlap=True, store_anno_string=True, log_level=logging.DEBUG)
+        if Doc.has_extension("concepts"):
+            Doc.remove_extension("concepts")
+        ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml', support_overlap=True, store_anno_string=True, log_level=logging.DEBUG)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
         for spans in doc.spans.values():
             for span in spans:
@@ -100,36 +124,11 @@ class TestEhostReader(unittest.TestCase):
     def test_dir_reader(self):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
-        dir_reader = EhostDirReader(nlp=English(), recursive=True,
-                                    schema_file='data/ehost_test_corpus/config/projectschema.xml')
+        dir_reader = EhostDirReader(nlp=English(), recursive=True, schema_file='data/ehost_test_corpus/config/projectschema.xml')
         docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
         assert (len(docs) == 2)
         for doc in docs:
             self.eval(doc)
-
-    def test_dir_reader2(self):
-        if Doc.has_extension("concepts"):
-            Doc.remove_extension("concepts")
-        dir_reader = EhostDirReader(nlp=English(), support_overlap=True,recursive=True,
-                                    schema_file='data/ehost_test_corpus/config/projectschema.xml')
-        docs = dir_reader.read(txt_dir='data/ehost_test_corpus/')
-        assert (len(docs) == 2)
-        for doc in docs:
-            assert (len(doc.spans) == 7)
-            assert ('Doc_Level_Purulence_Assessment' in doc.spans)
-            assert (str(doc.spans['Doc_Level_Purulence_Assessment'][0]) == 'CHIEF')
-            assert ('Purulent' in doc.spans)
-            assert (str(doc.spans['Purulent'][0]) == 'Abdominal pain')
-            assert ('Non-Purulent' in doc.spans)
-            assert (str(doc.spans['Non-Purulent'][0]) == 'PRESENT')
-            assert ('Incision_and_Drainage' in doc.spans)
-            assert (str(doc.spans['Incision_and_Drainage'][0]) == 'patient')
-            assert ('PreAnnotated' in doc.spans)
-            assert (str(doc.spans['PreAnnotated'][0]) == 'year-old')
-            assert ('Nonspecific_SSTI' in doc.spans)
-            assert (str(doc.spans['Nonspecific_SSTI'][0]) == 'X. The patient')
-            assert ('Exclusions' in doc.spans)
-            assert (str(doc.spans['Exclusions'][0]) == 'presented')
 
     def eval(self, doc):
         assert (len(doc.ents) == 7)
