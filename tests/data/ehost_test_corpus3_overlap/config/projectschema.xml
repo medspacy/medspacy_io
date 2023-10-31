@@ -15,7 +15,18 @@
     <Pre_Defined_Dictionary_DifferentWeight>false</Pre_Defined_Dictionary_DifferentWeight>
     <PreAnnotated_Dictionaries Owner="NLP_Assistant" />
     <attributeDefs />
-    <Relationship_Rules />
+    <Relationship_Rules>
+        <Relationship_Rule>
+            <Name>symptom_to_sectionHeader_HasSymptom</Name>
+            <Definition>((Symptom))((SectionHeader_HasSymptom))</Definition>
+            <attributeDefs />
+        </Relationship_Rule>
+        <Relationship_Rule>
+            <Name>symptom_to_symptom_section</Name>
+            <Definition>((Symptom))((Symptom_Section))</Definition>
+            <attributeDefs />
+        </Relationship_Rule>
+    </Relationship_Rules>
     <classDefs>
         <classDef>
             <Name>Symptom</Name>
@@ -23,6 +34,16 @@
             <RGB_G>192</RGB_G>
             <RGB_B>128</RGB_B>
             <InHerit_Public_Attributes>true</InHerit_Public_Attributes>
+            <attributeDef>
+                <Name>fever</Name>
+                <isCode>false</isCode>
+                <attributeDefOptionDef>low fever</attributeDefOptionDef>
+            </attributeDef>
+            <attributeDef>
+                <Name>headache</Name>
+                <isCode>false</isCode>
+                <attributeDefOptionDef>mild</attributeDefOptionDef>
+            </attributeDef>
             <Source>eHOST</Source>
         </classDef>
         <classDef>

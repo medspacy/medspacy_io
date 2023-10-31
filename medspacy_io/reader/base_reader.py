@@ -6,30 +6,15 @@ from typing import List, Union, Type, Tuple
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
-import warnings
 
-class decorator(object):
-    def __init__(self, concept = list()):
-        self.concept = concept
-       
-    def set_concepts(self, value):
-        print('setting the type of concept...')
-        if isinstance(value, dict):
-            warnings.warn("Warning: 0.1.0.dev34 will be deprecated. Please use latest version!")
-        self._concept = value
-        
-    def get_concepts(self):
-        print('getting concept...')
-        return self._concept
-        
-    concept = property(get_concepts, set_concepts)
 
 class BaseDocReader(object):
     """
     A base class for document reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, nlp: Language = None, support_overlap: bool = False, new_version: bool = False,log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
+    def __init__(self, nlp: Language = None, support_overlap: bool = False,
+                 log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
                  **kwargs):
         """
 
@@ -53,8 +38,11 @@ class BaseDocReader(object):
         self.encoding = encoding
         self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
-        self.new_version = new_version #new param
         self.set_logger(log_level)
+        if not Span.has_extension('annotation_id'):
+            Span.set_extension('annotation_id', default='')
+        if not Doc.has_extension('relations'):
+            Doc.set_extension('relations', default=[])
         if not Doc.has_extension('doc_name'):
             Doc.set_extension('doc_name', default='')
         pass
@@ -131,17 +119,8 @@ class BaseDocReader(object):
         doc = self.nlp(txt)
         doc._.doc_name = self.get_doc_name(txt_file, self.doc_name_depth)
         if self.support_overlap:
-            print('check if doc has extension concepts:', doc.has_extension("concepts"))
-            if doc.has_extension("concepts"):
-                print(doc._.concepts)
-            if not doc.has_extension("concepts"):#why not remove_extension?
-                print(self.new_version,not self.new_version)
-                if self.new_version:
-                    doc.set_extension("concepts",default = decorator(list()).concept)
-                else:
-                    doc.set_extension("concepts",default = decorator(OrderedDict()).concept)
-                #doc.set_extension("concepts",default = list()) #this list only store the spanGroup names
-                #doc.set_extension("concepts", default=OrderedDict())
+            if not doc.has_extension("concepts"):
+                doc.set_extension("concepts", default=OrderedDict())
         return self.process(doc, anno)
 
     def get_doc_name(self, txt_file: Union[str, Path], doc_name_depth: int = 0) -> str:
@@ -166,12 +145,14 @@ class BaseDocReader(object):
         @return: Annotation-added SpaCy Doc
         """
         sorted_span, classes, attributes, relations = self.parse_to_dicts(anno, sort_spans=True)
+        #print("PARSE_TO_DIC attributes:", attributes)
         if self.support_overlap:
             return self.process_support_overlaps(doc, sorted_span, classes, attributes, relations)
         else:
             return self.process_without_overlaps(doc, sorted_span, classes, attributes, relations)
 
-    def parse_to_dicts(self, anno: str, sort_spans: bool = False) -> Tuple[_OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
+    def parse_to_dicts(self, anno: str, sort_spans: bool = False) -> Tuple[
+        _OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
         """
         Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
         @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
@@ -234,6 +215,7 @@ class BaseDocReader(object):
                     "those. You will need to initiate the EhostDocReader with 'support_overlap=True' in the arguements")
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
+                span._.annotation_id = id
                 for attr_id in classes[id][1]:
                     if attr_id not in attributes:
                         continue
@@ -248,12 +230,28 @@ class BaseDocReader(object):
                 raise OverflowError(
                     'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
                                                                                                 end))
-            pass
         doc.ents = existing_entities + new_entities
+        rels = []
+        #print(relations)
+        #print(classes) rel_source, (rel_s, rel_name, rel_target)
+        for rel_source, (rel_s, rel_name, rel_target) in relations.items():
+            source_span = None
+            target_span = None
+            for ent in doc.ents:
+                for cls in classes[ent._.annotation_id][1]:
+                    if cls == rel_source:
+                        source_span = ent
+                        break
+                if ent._.annotation_id == rel_target:
+                    target_span = ent
+            rels.append((source_span,target_span,rel_name))
+        doc._.relations = rels
+         
         return doc
 
-    
-    def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict, attributes: OrderedDict, relations: OrderedDict) -> Doc:
+    def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
+                                 attributes: OrderedDict,
+                                 relations: OrderedDict) -> Doc:
         """:arg a SpaCy Doc, can be overwriten by the subclass as needed.
             This function will add spans to doc._.concepts (defined in 'read' function above,
             which allows overlapped annotations.
@@ -264,8 +262,8 @@ class BaseDocReader(object):
             @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
             @return: annotated Doc
         """
-        existing_concepts = doc._.concepts #:list = doc._.concepts #existing_concepts: dict = doc._.concepts
-        print('type of existing_concepts:',type(existing_concepts),self.new_version)
+        #print("ATTRIBUTES Ordered Dic:", attributes, "ATTRIBUTES name list:", attributes.keys())
+        existing_concepts: dict = doc._.concepts
         # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
@@ -315,50 +313,56 @@ class BaseDocReader(object):
                             .format(end, token_start, doc[token_start].idx,
                                     token_right_bound, doc[token_right_bound].idx))
                     token_end = self.find_end_token(end, token_start, token_right_bound, doc)
-                    #print('token_end:',token_end)
-                    #print('doc length:',len(doc))
-                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end-1]))
+                    self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end]))
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
+                span._.annotation_id = id #This is added, otherwise relation cannot be referred
                 if self.logger.isEnabledFor(logging.DEBUG):
                     import re
                     if re.sub('\s+', ' ', span._.span_txt) != re.sub('\s+', ' ', str(span)):
                         self.logger.debug('{}[{}:{}]\n\t{}<>\n\t{}<>'.format(classes[id][0], token_start, token_end,
                                                                              re.sub('\s+', ' ', span._.span_txt),
                                                                              re.sub('\s+', ' ', str(span))))
+
                 for attr_id in classes[id][1]:
+
                     if attr_id not in attributes:
                         continue
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
+                    print("THE ATTRIBUTES FOR:", classes[id][0], " IS ", attributes[attr_id][0], attributes[attr_id][1])
                     setattr(span._, attr_name, attr_value)
                 if self.store_anno_string and span_txt is not None:
                     setattr(span._, "span_txt", span_txt)
-                    
-                if isinstance(existing_concepts, dict):
-                    if classes[id][0] not in existing_concepts:
-                        existing_concepts[classes[id][0]] = list()#initialize a list of spans
-                    existing_concepts[classes[id][0]].append(span)
-                if isinstance(existing_concepts, list):
-                    if classes[id][0] not in existing_concepts:
-                        existing_concepts.append(classes[id][0])
-                        doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
-                    doc.spans[classes[id][0]].append(span)
-                #if classes[id][0] not in existing_concepts:
-                #    existing_concepts.append(classes[id][0])
-                #    doc.spans[classes[id][0]]=[] #initialize span group with concept name as the span group name
-                #    #existing_concepts[classes[id][0]] = list()
-                #doc.spans[classes[id][0]].append(span)
-                ##existing_concepts[classes[id][0]].append(span)
-                ## token_start = token_end
-                
+                if classes[id][0] not in existing_concepts:
+                    existing_concepts[classes[id][0]] = list()
+                existing_concepts[classes[id][0]].append(span)
+                # token_start = token_end
                 previous_abs_end = token_start
 
             else:
                 raise OverflowError(
                     'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
                                                                                                 end))
-            pass
+            #pass
+        rels = []
+        for rel_source, (rel_s, rel_name, rel_target) in relations.items():
+            print("RELATION:",rel_source,rel_s, rel_name,rel_target)
+            source_span = None
+            target_span = None
+            for cls in doc._.concepts.keys():
+                for sp in doc._.concepts[cls]:
+                    #print("---ALL EHOST ID:", sp._.annotation_id, sp.text)
+                    if sp._.annotation_id == rel_s:
+                        print("FIND THE SOURCE:", sp._.annotation_id, rel_s)
+                        source_span = sp
+                        #break
+                    if sp._.annotation_id == rel_target:
+                        target_span = sp
+            if (source_span is not None) and (target_span is not None):
+                rels.append((source_span, target_span, rel_name))
+        doc._.relations = rels
+
         return doc
 
     def get_contents(self, txt_file: Union[str, Path]) -> Tuple[str, str]:
