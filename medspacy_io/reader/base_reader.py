@@ -6,6 +6,7 @@ from typing import List, Union, Type, Tuple
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
+from spacy.tokens import SpanGroup
 
 
 class BaseDocReader(object):
@@ -144,8 +145,9 @@ class BaseDocReader(object):
         @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
         @return: Annotation-added SpaCy Doc
         """
+        self.logger.debug(f'parse: {anno}')
         sorted_span, classes, attributes, relations = self.parse_to_dicts(anno, sort_spans=True)
-        #print("PARSE_TO_DIC attributes:", attributes)
+        # print("PARSE_TO_DIC attributes:", attributes)
         if self.support_overlap:
             return self.process_support_overlaps(doc, sorted_span, classes, attributes, relations)
         else:
@@ -221,7 +223,10 @@ class BaseDocReader(object):
                         continue
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
-                    setattr(span._, attr_name, attr_value)
+                    if Span.has_extension(attr_name):
+                        setattr(span._, attr_name, attr_value)
+                    else:
+                        self.logger.warning(f"Attribute {attr_name} has not been set.")
                 if self.store_anno_string and span_txt is not None:
                     setattr(span._, "span_txt", span_txt)
                 new_entities.append(span)
@@ -232,8 +237,8 @@ class BaseDocReader(object):
                                                                                                 end))
         doc.ents = existing_entities + new_entities
         rels = []
-        #print(relations)
-        #print(classes) rel_source, (rel_s, rel_name, rel_target)
+        # print(relations)
+        # print(classes) rel_source, (rel_s, rel_name, rel_target)
         for rel_source, (rel_s, rel_name, rel_target) in relations.items():
             source_span = None
             target_span = None
@@ -244,9 +249,9 @@ class BaseDocReader(object):
                         break
                 if ent._.annotation_id == rel_target:
                     target_span = ent
-            rels.append((source_span,target_span,rel_name))
+            rels.append((source_span, target_span, rel_name))
         doc._.relations = rels
-         
+
         return doc
 
     def process_support_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
@@ -262,8 +267,8 @@ class BaseDocReader(object):
             @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
             @return: annotated Doc
         """
-        #print("ATTRIBUTES Ordered Dic:", attributes, "ATTRIBUTES name list:", attributes.keys())
-        existing_concepts: dict = doc._.concepts
+        # print("ATTRIBUTES Ordered Dic:", attributes, "ATTRIBUTES name list:", attributes.keys())
+        existing_concepts: dict = dict()
         # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
@@ -284,9 +289,10 @@ class BaseDocReader(object):
             elif token_start >= token_right_bound:
                 # If the annotation fall into a span that is after the last Spacy token, adjust the span to the last
                 # token
-                self.logger.debug("token_start {} >= token_right_bound {}".format(token_start, token_right_bound))
-                token_start = token_right_bound
-                token_end = token_right_bound + 1
+                self.logger.warning("token_start {} >= token_right_bound {}".format(token_start, token_right_bound))
+                # token_start = token_right_bound
+                # token_end = token_right_bound + 1
+                continue
             else:
                 # if start < previous_abs_end:
                 #     self.logger.debug("To find {} between token_start - 1({}[{}]) and  token_right_bound({}[{}])"
@@ -310,13 +316,13 @@ class BaseDocReader(object):
                 else:
                     self.logger.debug(
                         "To find token_end starts from {} between token_start ({}[{}]) and  token_right_bound({}[{}])"
-                            .format(end, token_start, doc[token_start].idx,
-                                    token_right_bound, doc[token_right_bound].idx))
+                        .format(end, token_start, doc[token_start].idx,
+                                token_right_bound, doc[token_right_bound].idx))
                     token_end = self.find_end_token(end, token_start, token_right_bound, doc)
                     self.logger.debug("\tFind end token {}('{}')".format(token_end, doc[token_end]))
             if token_start >= 0 and token_end > 0:
                 span = Span(doc, token_start, token_end, label=classes[id][0])
-                span._.annotation_id = id #This is added, otherwise relation cannot be referred
+                span._.annotation_id = id  # This is added, otherwise relation cannot be referred
                 if self.logger.isEnabledFor(logging.DEBUG):
                     import re
                     if re.sub('\s+', ' ', span._.span_txt) != re.sub('\s+', ' ', str(span)):
@@ -330,10 +336,17 @@ class BaseDocReader(object):
                         continue
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
-                    print("THE ATTRIBUTES FOR:", classes[id][0], " IS ", attributes[attr_id][0], attributes[attr_id][1])
-                    setattr(span._, attr_name, attr_value)
+                    self.logger.debug("THE ATTRIBUTES FOR:", classes[id][0], " IS ", attributes[attr_id][0],
+                                      attributes[attr_id][1])
+                    if Span.has_extension(attr_name):
+                        setattr(span._, attr_name, attr_value)
+                    else:
+                        self.logger.warning(f"Attribute {attr_name} has not been set.")
                 if self.store_anno_string and span_txt is not None:
-                    setattr(span._, "span_txt", span_txt)
+                    if Span.has_extension('span_txt'):
+                        setattr(span._, "span_txt", span_txt)
+                    else:
+                        self.logger.warning(f"Attribute {span_txt} has not been set.")
                 if classes[id][0] not in existing_concepts:
                     existing_concepts[classes[id][0]] = list()
                 existing_concepts[classes[id][0]].append(span)
@@ -344,19 +357,24 @@ class BaseDocReader(object):
                 raise OverflowError(
                     'The span of the annotation: {}[{}:{}] is out of document boundary.'.format(classes[id][0], start,
                                                                                                 end))
-            #pass
+            # pass
+
+        for concept_type, spans in existing_concepts.items():
+            group = SpanGroup(doc, name=concept_type, spans=spans)
+            doc.spans[concept_type] = group
+
         rels = []
         for rel_source, (rel_s, rel_name, rel_target) in relations.items():
-            print("RELATION:",rel_source,rel_s, rel_name,rel_target)
+            print("RELATION:", rel_source, rel_s, rel_name, rel_target)
             source_span = None
             target_span = None
-            for cls in doc._.concepts.keys():
-                for sp in doc._.concepts[cls]:
-                    #print("---ALL EHOST ID:", sp._.annotation_id, sp.text)
+            for cls in doc.spans.keys():
+                for sp in doc.spans[cls]:
+                    # print("---ALL EHOST ID:", sp._.annotation_id, sp.text)
                     if sp._.annotation_id == rel_s:
                         print("FIND THE SOURCE:", sp._.annotation_id, rel_s)
                         source_span = sp
-                        #break
+                        # break
                     if sp._.annotation_id == rel_target:
                         target_span = sp
             if (source_span is not None) and (target_span is not None):
@@ -393,14 +411,14 @@ class BaseDocReader(object):
             mid = int(token_left_bound + (token_right_bound - token_left_bound) / 2)
             self.logger.debug(
                 "Find abs offset {} between {}[{}:{}] and {}[{}:{}], mid={}"
-                    .format(start, token_left_bound, doc[token_left_bound].idx,
-                            doc[token_left_bound].idx + doc[token_left_bound].__len__(),
-                            token_right_bound, doc[token_right_bound].idx,
-                            doc[token_right_bound].idx + doc[token_right_bound].__len__(), mid))
+                .format(start, token_left_bound, doc[token_left_bound].idx,
+                        doc[token_left_bound].idx + doc[token_left_bound].__len__(),
+                        token_right_bound, doc[token_right_bound].idx,
+                        doc[token_right_bound].idx + doc[token_right_bound].__len__(), mid))
             if doc[mid].idx <= start < doc[mid].idx + len(doc[mid]):
                 self.logger.debug(
                     "return mid={} when doc[{}]({}) < {} < doc[{}].idx+len(doc[{}])({})"
-                        .format(mid, mid, doc[mid].idx, start, mid, mid, doc[mid].idx + len(doc[mid])))
+                    .format(mid, mid, doc[mid].idx, start, mid, mid, doc[mid].idx + len(doc[mid])))
                 return mid
             elif mid > 1 and doc[mid].idx > start >= doc[mid - 1].idx + len(doc[mid - 1]):
                 # sometime, manually created annotation can start outside SpaCy tokens, so adjustment is needed here.
@@ -433,6 +451,8 @@ class BaseDocReader(object):
         """
         for i in range(token_left_bound, token_right_bound + 1):
             if end <= doc[i].idx + doc[i].__len__():
+                if i == token_right_bound:
+                    return i
                 return i + 1
         return -1
 
@@ -499,7 +519,8 @@ class BaseDirReader:
             try:
                 doc = self.reader.read(txt_file)
                 docs.append(doc)
-            except:
+            except Exception as e:
+                # self.logger.warn(e)
                 raise IOError('An error occured while parsing annotation for document: {}'.format(txt_file.absolute()))
             pass
         return docs

@@ -10,9 +10,9 @@ sys.path.append("/Users/u6022257/Documents/medspacy_io/medspacy_io/reader") #nee
 
 from spacy.lang.en import English
 from spacy.tokens import Doc
-
-from ehost_reader import EhostDirReader
-from ehost_reader import EhostDocReader
+from pathlib import Path
+from medspacy_io.reader.ehost_reader import EhostDirReader
+from medspacy_io.reader.ehost_reader import EhostDocReader
 #from medspacy_io.reader.ehost_reader import EhostDirReader
 #from medspacy_io.reader.ehost_reader import EhostDocReader
 
@@ -100,11 +100,12 @@ class TestEhostReader(unittest.TestCase):
         assert(doc._.doc_name=='doc1.txt')
         ereader.doc_name_depth=1
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
-        assert (doc._.doc_name==r'corpus/doc1.txt')
+        assert (Path(doc._.doc_name).stem==r'doc1')
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml',
                                  doc_name_depth=2)
         doc = ereader.read('data/ehost_test_corpus/corpus/doc1.txt')
-        assert (doc._.doc_name==r'ehost_test_corpus/corpus/doc1.txt')
+        print(Path(doc._.doc_name).stem)
+        assert (Path(doc._.doc_name).stem==r'doc1')
 
 
     def test_check_spans(self):
