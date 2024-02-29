@@ -76,7 +76,7 @@ class BratDocReader(BaseDocReader):
                     values=items[-1]
                     if values.startswith('Value'):
                       default_value=values.split(":")
-                      if len(default_value>1):
+                      if len(default_value)>1:
                         default_value=default_value[1]
                     if name not in attr_names and not Span.has_extension(name):
                         Span.set_extension(name, default=default_value)
