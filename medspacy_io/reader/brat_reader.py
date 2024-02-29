@@ -2,7 +2,7 @@ import logging
 from collections import OrderedDict, _OrderedDictItemsView
 from pathlib import Path
 from typing import Union, Tuple, Set
-
+import re
 from spacy.language import Language
 from spacy.tokens.span import Span
 
@@ -57,6 +57,7 @@ class BratDocReader(BaseDocReader):
         attr_names = set()
         attr_conf_start = False
         if schema_file is not None and schema_file.name.endswith("conf"):
+            print('found annotation.conf file')
             for row in schema_file.read_text(encoding=encoding).split("\n"):
                 if len(row.strip()) == 0 or row[0] == '#':
                     continue
@@ -69,8 +70,14 @@ class BratDocReader(BaseDocReader):
                     # [attributes]
                     # Negation        Arg:<EVENT>
                     # Confidence        Arg:<EVENT>, Value:Possible|Likely|Certain
-                    name = row.split('        ')[0]
+                    items=re.split('\s+')
+                    name = items[0]
                     default_value = None
+                    values=items[-1]
+                    if values.startswith('Value'):
+                      default_value=values.split(":")
+                      if len(default_value>1):
+                        default_value=default_value[1]
                     if name not in attr_names and not Span.has_extension(name):
                         Span.set_extension(name, default=default_value)
                         attr_names.add(name)
