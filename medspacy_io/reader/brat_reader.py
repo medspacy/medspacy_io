@@ -70,7 +70,7 @@ class BratDocReader(BaseDocReader):
                     # [attributes]
                     # Negation        Arg:<EVENT>
                     # Confidence        Arg:<EVENT>, Value:Possible|Likely|Certain
-                    items=re.split('\s+')
+                    items=re.split('\s+', row)
                     name = items[0]
                     default_value = None
                     values=items[-1]
