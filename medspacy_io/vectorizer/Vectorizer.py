@@ -132,10 +132,10 @@ class Vectorizer:
             sent_idx.add(begin_sent.start, end_sent.end, len(context_sents))
             context_sents.append(sents[i:i + sent_window])
         concepts = []
-        if hasattr(doc._, "concepts"):
-            for type in doc._.concepts:
+        if len(doc.spans)>0:
+            for type in doc.spans.keys():
                 if len(type_filter) == 0 or type in type_filter:
-                    concepts.extend(doc._.concepts[type])
+                    concepts.extend(doc.spans[type])
         else:
             concepts = [ent for ent in doc.ents if (len(type_filter) == 0 or ent.label in type_filter)]
 
@@ -265,10 +265,10 @@ class Vectorizer:
             data_dict: dict = OrderedDict([(col, []) for col in (['X', 'tokens'] + list(output_labels.keys()) + ['y'])])
 
         concepts = []
-        if hasattr(doc._, "concepts"):
-            for type in doc._.concepts:
+        if len(doc.spans)>0:
+            for type in doc.spans.keys():
                 if type in type_filter:
-                    concepts.extend(doc._.concepts[type])
+                    concepts.extend(doc.spans[type])
         else:
             concepts = [ent for ent in doc.ents if (ent.label in type_filter)]
 

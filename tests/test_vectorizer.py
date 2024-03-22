@@ -3,10 +3,9 @@ from collections import OrderedDict
 
 from spacy.lang.en import English
 from spacy.tokens.span import Span
-
+from PyRuSH import PyRuSHSentencizer
 from medspacy_io.reader import EhostDocReader
 from medspacy_io.reader import EhostDirReader
-from PyRuSH import PyRuSHSentencizer
 from medspacy_io.vectorizer import Vectorizer
 from spacy.tokens.doc import Doc
 import pandas as pd
@@ -16,15 +15,15 @@ class TestEhostReader(unittest.TestCase):
 
     def setUp(self) -> None:
         self.nlp = English()
-        self.nlp.add_pipe(PyRuSHSentencizer('conf/rush_rules.tsv'))
+        self.nlp.add_pipe("medspacy_pyrush", config={'rules_path':'conf/rush_rules.tsv'})
 
     def test_to_sents_df(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         print(len(list(doc.sents)))
-        assert (len(doc._.concepts) == 3)
-        assert (len(doc._.concepts['Nonspecific_SSTI']) == 1)
+        assert (len(doc.spans) == 3)
+        assert (len(doc.spans['Nonspecific_SSTI']) == 1)
         df = Vectorizer.to_sents_df(doc)
         # print(df.shape)
         assert (df.shape[0] == 4)
@@ -44,8 +43,8 @@ class TestEhostReader(unittest.TestCase):
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
         print(len(list(doc.sents)))
-        assert (len(doc._.concepts) == 3)
-        assert (len(doc._.concepts['Nonspecific_SSTI']) == 1)
+        assert (len(doc.spans) == 3)
+        assert (len(doc.spans['Nonspecific_SSTI']) == 1)
         df = Vectorizer.to_sents_nparray(doc)
         print(df)
         assert (df.shape[0] == 4)
@@ -245,7 +244,7 @@ class TestEhostReader(unittest.TestCase):
         assert(res['PreAnnotated'][1][9]=='PreAnnotated')
         assert(res['PreAnnotated'][1][10]=='PreAnnotated')
         assert(res['PreAnnotated'][1][11]=='PreAnnotated')
-        assert(res['Nonspecific_SSTI'][1][12]=='O')ma
+        assert(res['Nonspecific_SSTI'][1][12]=='O')
         assert(res['Nonspecific_SSTI'][1][17]=='[SEP]')
         assert(res['Nonspecific_SSTI'][1][18]=='Nonspecific_SSTI')
         assert(res['Nonspecific_SSTI'][1][19]=='Nonspecific_SSTI')
