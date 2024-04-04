@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<annotations textSource="18305.txt">
+    <annotation>
+        <mention id="EHOST_Instance_10" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="128" end="154" />
+        <spannedText>HISTORY OF PRESENT ILLNESS</spannedText>
+        <creationDate>Thu Apr 04 15:37:52 MDT 2024</creationDate>
+    </annotation>
+    <classMention id="EHOST_Instance_10">
+        <mentionClass id="SectionHeader_HasSymptom">HISTORY OF PRESENT ILLNESS</mentionClass>
+    </classMention>
+    <annotation>
+        <mention id="EHOST_Instance_11" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="232" end="254" />
+        <spannedText>polymyalgia rheumatica</spannedText>
+        <creationDate>Thu Apr 04 15:38:10 MDT 2024</creationDate>
+    </annotation>
+    <stringSlotMention id="EHOST_Instance_13">
+        <mentionSlot id="fever" />
+        <stringSlotMentionValue value="low fever" />
+    </stringSlotMention>
+    <stringSlotMention id="EHOST_Instance_14">
+        <mentionSlot id="headache" />
+        <stringSlotMentionValue value="mild" />
+    </stringSlotMention>
+    <complexSlotMention id="EHOST_Instance_15">
+        <mentionSlot id="symptom_to_sectionHeader_HasSymptom" />
+        <complexSlotMentionValue value="EHOST_Instance_10" />
+    </complexSlotMention>
+    <classMention id="EHOST_Instance_11">
+        <hasSlotMention id="EHOST_Instance_13" />
+        <hasSlotMention id="EHOST_Instance_14" />
+        <hasSlotMention id="EHOST_Instance_15" />
+        <mentionClass id="Symptom">polymyalgia rheumatica</mentionClass>
+    </classMention>
+    <annotation>
+        <mention id="EHOST_Instance_12" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="232" end="254" />
+        <spannedText>polymyalgia rheumatica</spannedText>
+        <creationDate>Thu Apr 04 15:41:40 MDT 2024</creationDate>
+    </annotation>
+    <stringSlotMention id="EHOST_Instance_16">
+        <mentionSlot id="single" />
+        <stringSlotMentionValue value="one_symptom" />
+    </stringSlotMention>
+    <stringSlotMention id="EHOST_Instance_17">
+        <mentionSlot id="group" />
+        <stringSlotMentionValue value="many_symptom" />
+    </stringSlotMention>
+    <complexSlotMention id="EHOST_Instance_18">
+        <mentionSlot id="Symptom_Section_TO_SectionHearder_HasSymptom" />
+        <complexSlotMentionValue value="EHOST_Instance_10" />
+    </complexSlotMention>
+    <classMention id="EHOST_Instance_12">
+        <hasSlotMention id="EHOST_Instance_16" />
+        <hasSlotMention id="EHOST_Instance_17" />
+        <hasSlotMention id="EHOST_Instance_18" />
+        <mentionClass id="Symptom_Section">polymyalgia rheumatica</mentionClass>
+    </classMention>
+    <eHOST_Adjudication_Status version="1.0">
+        <Adjudication_Selected_Annotators version="1.0" />
+        <Adjudication_Selected_Classes version="1.0" />
+        <Adjudication_Others>
+            <CHECK_OVERLAPPED_SPANS>false</CHECK_OVERLAPPED_SPANS>
+            <CHECK_ATTRIBUTES>false</CHECK_ATTRIBUTES>
+            <CHECK_RELATIONSHIP>false</CHECK_RELATIONSHIP>
+            <CHECK_CLASS>false</CHECK_CLASS>
+            <CHECK_COMMENT>false</CHECK_COMMENT>
+        </Adjudication_Others>
+    </eHOST_Adjudication_Status>
+</annotations>
+

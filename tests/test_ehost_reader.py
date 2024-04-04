@@ -11,15 +11,16 @@ sys.path.append("/Users/u6022257/Documents/medspacy_io/medspacy_io/reader") #nee
 from spacy.lang.en import English
 from spacy.tokens import Doc
 from pathlib import Path
+#from medspacy_io.reader.ehost_reader import EhostDocReader
 from medspacy_io.reader.ehost_reader import EhostDirReader
 from medspacy_io.reader.ehost_reader import EhostDocReader
 #from medspacy_io.reader.ehost_reader import EhostDirReader
 #from medspacy_io.reader.ehost_reader import EhostDocReader
 
 
-class TestEhostReader(unittest.TestCase):
+class test_eHost_reader(unittest.TestCase):
 
-    def test_reader_initail(self):
+    def test_reader_initial(self):
         ereader = EhostDocReader(nlp=English())
         assert (hasattr(ereader, 'use_adjudication'))
         assert (not ereader.use_adjudication)
@@ -78,18 +79,18 @@ class TestEhostReader(unittest.TestCase):
     #     assert (len(doc.spans['Doc_Level_Purulence_Assessment']) == 2)
     #
     
-    def test_read_overlap_old_version(self):
+    def test_read_overlap(self): #spanGroup
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml',
                                  support_overlap=True)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc1.txt')
-        assert (len(doc._.concepts) == 3)
-        assert (len(doc._.concepts['PreAnnotated']) == 1)
+        assert (len(doc.spans) == 3)
+        assert (len(doc.spans['PreAnnotated']) == 1)
         doc = ereader.read('data/ehost_test_corpus2/corpus/doc2.txt')
-        assert (len(doc._.concepts) == 7)
-        assert (len(doc._.concepts['Exclusions']) == 2)
-        assert (len(doc._.concepts['Doc_Level_Purulence_Assessment']) == 2)
+        assert (len(doc.spans) == 7)
+        assert (len(doc.spans['Exclusions']) == 2)
+        assert (len(doc.spans['Doc_Level_Purulence_Assessment']) == 2)
 
 
      
@@ -108,7 +109,7 @@ class TestEhostReader(unittest.TestCase):
         assert (Path(doc._.doc_name).stem==r'doc1')
 
 
-    def test_check_spans(self):
+    def test_check_spans(self):#none Overlapped spans
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus/config/projectschema.xml', support_overlap=False, store_anno_string=True, encoding='UTF8',log_level=logging.DEBUG)
@@ -117,7 +118,7 @@ class TestEhostReader(unittest.TestCase):
             print(span._.span_txt, '<>', span)
             assert (span._.span_txt.replace('\n', ' ') in str(span).replace('\n', ' '))
 
-    def test_check_spans2(self):
+    def test_check_spans2(self):#overlapped spans
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(nlp=English(), schema_file='data/ehost_test_corpus2/config/projectschema.xml', support_overlap=True, store_anno_string=True, log_level=logging.DEBUG)
@@ -154,3 +155,16 @@ class TestEhostReader(unittest.TestCase):
         assert (doc.ents[4].label_ == 'PreAnnotated')
         assert (doc.ents[5].label_ == 'Nonspecific_SSTI')
         assert (doc.ents[6].label_ == 'Exclusions')
+
+    def test_relation_reader(self):
+        ereader = EhostDocReader(nlp=English(),
+                                 schema_file='data/ehost_test_corpus3_overlap/config/projectschema.xml',
+                                 support_overlap=True)
+        doc = ereader.read('data/ehost_test_corpus3_overlap/corpus/18305.txt')
+        assert(len(doc._.relations) == 1)
+        for r in doc._.relations:
+            assert(r[2] == 'symptom_to_symptom_section') #relation label
+            assert(r[0]._.annotation_id == 'EHOST_Instance_8') #source
+            assert(r[1]._.annotation_id == 'EHOST_Instance_1') #target
+
+
