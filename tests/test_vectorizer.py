@@ -1,5 +1,6 @@
 import unittest
 from collections import OrderedDict
+import os
 
 from spacy.lang.en import English
 from spacy.tokens.span import Span
@@ -14,8 +15,11 @@ import pandas as pd
 class TestEhostReader(unittest.TestCase):
 
     def setUp(self) -> None:
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        # Change the current working directory to the script's directory
+        os.chdir(script_directory)
         self.nlp = English()
-        self.nlp.add_pipe("medspacy_pyrush", config={'rules_path':'tests/conf/rush_rules.tsv'})
+        self.nlp.add_pipe("medspacy_pyrush", config={'rules_path':'conf/rush_rules.tsv'})
 
     def test_to_sents_df(self):
         ereader = EhostDocReader(nlp=self.nlp, schema_file='data/ehost_test_corpus2/config/projectschema.xml',
