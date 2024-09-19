@@ -10,14 +10,13 @@ from medspacy_io.reader import EhostDirReader
 from medspacy_io.vectorizer import Vectorizer
 from spacy.tokens.doc import Doc
 import pandas as pd
-
+script_directory = os.path.dirname(os.path.abspath(__file__))
+# Change the current working directory to the script's directory
+os.chdir(script_directory)
 
 class TestEhostReader(unittest.TestCase):
 
     def setUp(self) -> None:
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        # Change the current working directory to the script's directory
-        os.chdir(script_directory)
         self.nlp = English()
         self.nlp.add_pipe("medspacy_pyrush", config={'rules_path':'conf/rush_rules.tsv'})
 
