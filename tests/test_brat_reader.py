@@ -7,6 +7,9 @@ from spacy.tokens import Doc
 
 from medspacy_io.reader import BratDirReader
 from medspacy_io.reader import BratDocReader
+import os
+script_directory = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_directory)
 
 
 class TestBratReader(unittest.TestCase):
