@@ -133,9 +133,9 @@ class Vectorizer:
             context_sents.append(sents[i:i + sent_window])
         concepts = []
         if len(doc.spans)>0:
-            for type in doc.spans.keys():
-                if len(type_filter) == 0 or type in type_filter:
-                    concepts.extend(doc.spans[type])
+            for span_type in doc.spans.keys():
+                if len(type_filter) == 0 or span_type in type_filter:
+                    concepts.extend(doc.spans[span_type])
         else:
             concepts = [ent for ent in doc.ents if (len(type_filter) == 0 or ent.label in type_filter)]
 
@@ -575,9 +575,12 @@ class Vectorizer:
             keys.append(type_filter)
             return
         for attr in type_filter:
-            if not hasattr(concept._, attr):
-                return keys
-            value = getattr(concept._, attr)
+            if hasattr(concept._, attr):
+                value = getattr(concept._, attr)
+            elif hasattr(concept._, 'ANNOT_' + attr):
+                value = getattr(concept._, 'ANNOT_' + attr)
+            else:
+                continue
             if value in type_filter[attr]:
                 Vectorizer.get_mapped_name_by_attr_values(concept=concept, type_filter=type_filter[attr][value],
                                                           keys=keys)

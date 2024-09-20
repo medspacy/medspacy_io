@@ -8,7 +8,7 @@ from lxml.etree import Element, iterparse
 from spacy.language import Language
 from spacy.tokens.span import Span
 
-from base_reader import BaseDocReader, BaseDirReader
+from .base_reader import BaseDocReader, BaseDirReader
 
 
 class EhostDocReader(BaseDocReader):

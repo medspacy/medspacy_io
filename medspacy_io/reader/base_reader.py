@@ -343,8 +343,7 @@ class BaseDocReader(object):
                         continue
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
-                    self.logger.debug("THE ATTRIBUTES FOR:", classes[id][0], " IS ", attributes[attr_id][0],
-                                      attributes[attr_id][1])
+                    self.logger.debug(f"THE ATTRIBUTES FOR: {classes[id][0]} IS {attributes[attr_id][0]} {attributes[attr_id][1]}")
                     if Span.has_extension(attr_name):
                         setattr(span._, attr_name, attr_value)
                     else:

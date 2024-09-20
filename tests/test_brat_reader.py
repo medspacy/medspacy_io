@@ -8,6 +8,9 @@ from spacy.tokens import Doc
 from medspacy_io.reader import BratDirReader
 from medspacy_io.reader import BratDocReader
 
+import os
+script_directory = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_directory)
 
 class TestBratReader(unittest.TestCase):
 
@@ -63,12 +66,12 @@ class TestBratReader(unittest.TestCase):
         assert (doc._.doc_name == '000-introduction.txt')
         breader.doc_name_depth = 1
         doc = breader.read('data/brat_test_corpus/000-introduction.txt')
-        assert (doc._.doc_name == 'brat_test_corpus/000-introduction.txt')
+        assert (doc._.doc_name ==  str(Path('brat_test_corpus', '000-introduction.txt')))
         breader = BratDocReader(nlp=English(), schema_file='data/brat_test_corpus/annotation.conf',
                                 doc_name_depth=2)
         doc = breader.read('data/brat_test_corpus/000-introduction.txt')
         print(doc._.doc_name)
-        assert (doc._.doc_name == 'data/brat_test_corpus/000-introduction.txt')
+        assert (doc._.doc_name ==  str(Path('data', 'brat_test_corpus', '000-introduction.txt')))
 
     def test_read_overlap(self):
         breader = BratDocReader(nlp=English(), schema_file='data/brat_test_corpus/annotation.conf',

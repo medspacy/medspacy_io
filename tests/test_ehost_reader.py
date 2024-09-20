@@ -11,11 +11,8 @@ sys.path.append("/Users/u6022257/Documents/medspacy_io/medspacy_io/reader") #nee
 from spacy.lang.en import English
 from spacy.tokens import Doc
 from pathlib import Path
-#from medspacy_io.reader.ehost_reader import EhostDocReader
 from medspacy_io.reader.ehost_reader import EhostDirReader
 from medspacy_io.reader.ehost_reader import EhostDocReader
-#from medspacy_io.reader.ehost_reader import EhostDirReader
-#from medspacy_io.reader.ehost_reader import EhostDocReader
 
 
 class test_eHost_reader(unittest.TestCase):
