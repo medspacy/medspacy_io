@@ -1,4 +1,4 @@
-from typing import List, Set, Dict, Union
+from typing import List, Set, Dict, Union, Tuple
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
@@ -7,9 +7,14 @@ from quicksectx import IntervalTree
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 from spacy.tokens.token import Token
+import re
 
 
 class Vectorizer:
+    paragraph_delimiters = [r'\n\s+\s*', r'^[A-Z][a-z/&]*:$]', r'^[A-Z]{2,}$']
+
+    # Compile the regex patterns into a single regex
+    delimiter_regex = re.compile('|'.join(paragraph_delimiters), re.MULTILINE)
 
     @staticmethod
     def to_seq_df(doc: Doc, sent_window: int = 1, type_filter: Union[Set[str], Dict] = set(),
@@ -45,7 +50,7 @@ class Vectorizer:
 
     @staticmethod
     def to_sents_df(doc: Doc, sent_window: int = 1, type_filter: Union[Set[str], Dict] = set(),
-                    default_label: str = "NEG", track_doc_name: bool = False) -> pd.DataFrame:
+                    default_label: str = "NEG", track_doc_name: bool = False, parag_context_top_n=0) -> pd.DataFrame:
         """
         Convert a SpaCy doc into pandas DataFrame. Assuming the doc has been labeled based on concepts(snippets), Vectorizer
         extends the input to the concepts' context sentences (depends on the sent_window size), generate labeled context
@@ -60,13 +65,18 @@ class Vectorizer:
         concept_type->attr1->value1->...(other attr->value pairs if needed)->mapped key name
         @param default_label: If there is no labeled concept in the context sentences, label it with this default_label
         @param track_doc_name: Whether add doc name to an additional column to track the output vectors
+        @param parag_context_top_n: use top n characters as paragraph context to generate paragcontext column.
         @return: a pandas DataFrame
 
         """
-        data_dict = {'X': [], 'concept': [], 'y': [], 'doc_name': []} if track_doc_name else {'X': [], 'concept': [],
-                                                                                              'y': []}
+        data_dict = {'X': [], 'concept': [], 'y': []}
+        if track_doc_name:
+            data_dict['doc_name'] = []
+        if parag_context_top_n > 0:
+            data_dict['paragcontext'] = []
         data_dict = Vectorizer.to_data_dict(doc, sent_window=sent_window, type_filter=type_filter,
-                                            default_label=default_label, data_dict=data_dict)
+                                            default_label=default_label, data_dict=data_dict,
+                                            parag_context_top_n=parag_context_top_n)
         df = pd.DataFrame(data_dict)
         return df
 
@@ -103,8 +113,89 @@ class Vectorizer:
         return sents_nparray
 
     @staticmethod
+    def strip_whitespace(text, start, end):
+        """Adjust the start and end indices to strip whitespace around the span."""
+        while start < end and text[start].isspace():
+            start += 1
+        while end > start and text[end - 1].isspace():
+            end -= 1
+        return start, end
+
+    @staticmethod
+    def add_default_paragraphs(doc: Doc):
+        """Add paragraphs as spans to the spaCy Doc object, stripping leading and trailing whitespace."""
+        spans = []
+        start = 0
+
+        for match in Vectorizer.delimiter_regex.finditer(doc.text):
+            end = match.start()
+            if start < end:
+                # Adjust start and end indices to strip whitespace
+                stripped_start, stripped_end = Vectorizer.strip_whitespace(doc.text, start, end)
+                if stripped_start < stripped_end:  # Ensure there's still content left
+                    span = doc.char_span(stripped_start, stripped_end, alignment_mode='expand')
+                    if span is not None:
+                        spans.append(span)
+            start = match.start()
+
+        if start < len(doc.text):
+            # Adjust final span to strip whitespace
+            stripped_start, stripped_end = Vectorizer.strip_whitespace(doc.text, start, len(doc.text))
+            if stripped_start < stripped_end:  # Ensure there's still content left
+                span = doc.char_span(stripped_start, stripped_end, alignment_mode='expand')
+                if span is not None:
+                    spans.append(span)
+
+        # Set paragraph spans in the doc
+        doc.spans['paragraphs'] = spans
+
+        return doc
+
+    @staticmethod
+    def index_paragraphs(paragraphs: List[Span]) -> IntervalTree:
+        parag_idx = IntervalTree()
+        context_sents = []
+        for i, paragraph in enumerate(paragraphs):
+            parag_idx.add(paragraph.start, paragraph.end, i)
+        return parag_idx
+
+    @staticmethod
+    def get_paragcontext(concept: Span, parag_context_top_n: int, parag_idx: IntervalTree) -> str:
+        parag_ids = parag_idx.search(concept.start, concept.end)
+        parag_id = min([d.data for d in parag_ids])
+        parag = concept.doc.spans['paragraphs'][parag_id]
+        parag_context = parag.text[:parag_context_top_n]
+        return parag_context
+
+    @staticmethod
+    def index_sentence_windows(sents: List[Span], sent_window: int) -> Tuple[IntervalTree, List[List[Span]]]:
+        context_sents = []
+        sent_idx = IntervalTree()
+        for i in range(0, len(sents) - sent_window + 1):
+            begin_sent = sents[i]
+            end_sent = sents[i + sent_window - 1]
+            sent_idx.add(begin_sent.start, end_sent.end, len(context_sents))
+            context_sents.append(sents[i:i + sent_window])
+        return sent_idx, context_sents
+
+    @staticmethod
+    def format_concepts(doc: Doc, type_filter: Union[Set[str], Dict] = set(), has_paragraph_spans: bool = False) -> \
+    List[Span]:
+        concepts = []
+        if (not has_paragraph_spans and len(doc.spans) > 0) or (has_paragraph_spans and len(doc.spans) > 1):
+            for span_type in doc.spans.keys():
+                if span_type == 'paragraphs':
+                    continue
+                if len(type_filter) == 0 or span_type in type_filter:
+                    concepts.extend(doc.spans[span_type])
+        else:
+            concepts = [ent for ent in doc.ents if (len(type_filter) == 0 or ent.label in type_filter)]
+        return concepts
+
+    @staticmethod
     def to_data_dict(doc: Doc, sent_window: int = 1, type_filter: Union[Set[str], Dict] = set(),
-                     default_label: str = "NEG", data_dict: dict = {'X': [], 'concept': [], 'y': []}) -> Dict:
+                     default_label: str = "NEG", data_dict: dict = {'X': [], 'concept': [], 'y': []},
+                     parag_context_top_n: int = 0) -> Dict:
         """
         Convert a SpaCy doc into a labeled data dictionary. Assuming the doc has been labeled based on concepts(snippets), Vectorizer
         extends the input to the concepts' context sentences (depends on the sent_window size), generate labeled context
@@ -121,23 +212,12 @@ class Vectorizer:
         @param data_dict: a dictionary to hold the output and pass on across documents, so that a corpus can be aggregated
         @param sent_idx: an IntervalTree built with all sentences in the doc
         @param context_sents: a 2-d list of sentences with predefined window size.
+        @param parag_context_top_n: use top n characters as paragraph context to generate paragcontext column.
         @return: a dictionary
         """
-        sent_idx = IntervalTree()
         sents = list(doc.sents)
-        context_sents = []
-        for i in range(0, len(sents) - sent_window + 1):
-            begin_sent = sents[i]
-            end_sent = sents[i + sent_window - 1]
-            sent_idx.add(begin_sent.start, end_sent.end, len(context_sents))
-            context_sents.append(sents[i:i + sent_window])
-        concepts = []
-        if len(doc.spans)>0:
-            for type in doc.spans.keys():
-                if len(type_filter) == 0 or type in type_filter:
-                    concepts.extend(doc.spans[type])
-        else:
-            concepts = [ent for ent in doc.ents if (len(type_filter) == 0 or ent.label in type_filter)]
+        sent_idx, context_sents = Vectorizer.index_sentence_windows(sents, sent_window)
+        concepts = Vectorizer.format_concepts(doc, type_filter, parag_context_top_n > 0)
 
         get_doc_name = 'doc_name' in data_dict
         doc_name = doc._.doc_name if get_doc_name else ''
@@ -148,21 +228,22 @@ class Vectorizer:
                                                          default_label=default_label,
                                                          data_dict=data_dict,
                                                          sent_idx=sent_idx, context_sents=context_sents,
-                                                         doc_name=doc_name)
+                                                         doc_name=doc_name, parag_context_top_n=parag_context_top_n)
         elif isinstance(type_filter, Dict):
             if len(type_filter) == 0:
                 data_dict = Vectorizer.to_data_dict_on_types(concepts=concepts,
                                                              default_label=default_label,
                                                              data_dict=data_dict,
                                                              sent_idx=sent_idx, context_sents=context_sents,
-                                                             doc_name=doc_name)
+                                                             doc_name=doc_name, parag_context_top_n=parag_context_top_n)
             else:
                 data_dict = Vectorizer.to_data_dict_on_type_attr_values(concepts=concepts,
                                                                         type_filter=type_filter,
                                                                         default_label=default_label,
                                                                         data_dict=data_dict,
                                                                         sent_idx=sent_idx, context_sents=context_sents,
-                                                                        doc_name=doc_name)
+                                                                        doc_name=doc_name,
+                                                                        parag_context_top_n=parag_context_top_n)
         else:
             raise TypeError(
                 'The arg: "type_filter" needs to be either a set of concept names or a dictionary. Not a {}:\n\t{}'.format(
@@ -170,55 +251,10 @@ class Vectorizer:
         return data_dict
 
     @staticmethod
-    def to_data_dict_on_types(concepts: List[Span], type_filter: Set = set(),
-                              default_label: str = "NEG", data_dict: dict = {'X': [], 'concept': [], 'y': []},
-                              sent_idx: IntervalTree = None, context_sents: List[List[Span]] = None,
-                              doc_name: str = '') -> Dict:
-        """
-        Convert a SpaCy doc into a labeled data dictionary. Assuming the doc has been labeled based on concepts(snippets), Vectorizer
-        extends the input to the concepts' context sentences (depends on the sent_window size), generate labeled context
-        sentences data, and return a dictionary (with three keys: 'X'---the text of context sentences,'concepts'---
-        the text of labeled concepts, 'y'---label)
-        @param concepts: a list of concepts (in Span type)
-        @param type_filter: a set of type names that need to be included to be vectorized
-        @param default_label: If there is no labeled concept in the context sentences, label it with this default_label
-        @param data_dict: a dictionary to hold the output and pass on across documents, so that a corpus can be aggregated
-        @param sent_idx: an IntervalTree built with all sentences in the doc
-        @param context_sents: a 2-d list of sentences with predefined window size.
-        @param doc_name: doc file name (for tracking purpose)
-        @return: a dictionary
-        """
-        if sent_idx is None or context_sents is None:
-            return data_dict
-        get_doc_name = 'doc_name' in data_dict
-        labeled_sents_id = set()
-        for concept in concepts:
-            if len(type_filter) > 0 and concept.label_ not in type_filter:
-                continue
-            context_sents_ids = sent_idx.search(concept.start, concept.end)
-            for id in context_sents_ids:
-                labeled_sents_id.add(id.data)
-                context = context_sents[id.data]
-                if concept.start >= context[0].start and concept.end <= context[-1].end:
-                    data_dict['X'].append(' '.join([str(s) for s in context]))
-                    data_dict['y'].append(concept.label_)
-                    data_dict['concept'].append(str(concept))
-                    if get_doc_name:
-                        data_dict['doc_name'].append(doc_name)
-        for i, context in enumerate(context_sents):
-            if i not in labeled_sents_id:
-                data_dict['X'].append(' '.join([str(s) for s in context]))
-                data_dict['y'].append(default_label)
-                data_dict['concept'].append('')
-                if get_doc_name:
-                    data_dict['doc_name'].append(doc_name)
-        return data_dict
-
-    @staticmethod
     def to_seq_data_dict(doc: Doc, sent_window: int = 1, type_filter: Union[List[str], OrderedDict] = [],
                          output_labels: OrderedDict = OrderedDict(),
                          default_label: str = "O",
-                         data_dict: OrderedDict=OrderedDict(),
+                         data_dict: OrderedDict = OrderedDict(),
                          max_tokens: int = 200,
                          pad_token: Union[str, None] = None,
                          sep_token: Union[str, None] = '[SEP]') -> Dict:
@@ -261,11 +297,11 @@ class Vectorizer:
         if len(output_labels) == 0:
             Vectorizer.get_output_labels(type_filter, output_labels)
 
-        if len(data_dict)==0:
+        if len(data_dict) == 0:
             data_dict: dict = OrderedDict([(col, []) for col in (['X', 'tokens'] + list(output_labels.keys()) + ['y'])])
 
         concepts = []
-        if len(doc.spans)>0:
+        if len(doc.spans) > 0:
             for type in doc.spans.keys():
                 if type in type_filter:
                     concepts.extend(doc.spans[type])
@@ -351,7 +387,8 @@ class Vectorizer:
                     data_dict[label].append([default_label] * len(sepped_context))
             else:
                 for label in output_labels.keys():
-                    data_dict[label].append([default_label if t != sep_token else sep_token for t in data_dict['tokens'][-1]])
+                    data_dict[label].append(
+                        [default_label if t != sep_token else sep_token for t in data_dict['tokens'][-1]])
 
             overlapped_concepts = all_concept_idx.search(context[0].start, context[-1].end)
 
@@ -435,7 +472,8 @@ class Vectorizer:
                     data_dict[label].append([default_label] * len(sepped_context))
             else:
                 for label in output_labels.keys():
-                    data_dict[label].append([default_label if t != sep_token else sep_token for t in data_dict['tokens'][-1]])
+                    data_dict[label].append(
+                        [default_label if t != sep_token else sep_token for t in data_dict['tokens'][-1]])
 
             overlapped_concepts = all_concept_idx.search(context[0].start, context[-1].end)
 
@@ -486,11 +524,70 @@ class Vectorizer:
         return data_dict
 
     @staticmethod
+    def to_data_dict_on_types(concepts: List[Span], type_filter: Set = set(),
+                              default_label: str = "NEG", data_dict: dict = {'X': [], 'concept': [], 'y': []},
+                              sent_idx: IntervalTree = None, context_sents: List[List[Span]] = None,
+                              doc_name: str = '', parag_context_top_n: int = 0) -> Dict:
+        """
+        Convert a SpaCy doc into a labeled data dictionary. Assuming the doc has been labeled based on concepts(snippets), Vectorizer
+        extends the input to the concepts' context sentences (depends on the sent_window size), generate labeled context
+        sentences data, and return a dictionary (with three keys: 'X'---the text of context sentences,'concepts'---
+        the text of labeled concepts, 'y'---label)
+        @param concepts: a list of concepts (in Span type)
+        @param type_filter: a set of type names that need to be included to be vectorized
+        @param default_label: If there is no labeled concept in the context sentences, label it with this default_label
+        @param data_dict: a dictionary to hold the output and pass on across documents, so that a corpus can be aggregated
+        @param sent_idx: an IntervalTree built with all sentences in the doc
+        @param context_sents: a 2-d list of sentences with predefined window size.
+        @param doc_name: doc file name (for tracking purpose)
+        @param parag_context_top_n: use top n characters as paragraph context to generate paragcontext column.
+        @return: a dictionary
+        """
+        if sent_idx is None or context_sents is None:
+            return data_dict
+
+        if parag_context_top_n > 0 and len(context_sents) > 0:
+            doc = context_sents[0][0].doc
+            if 'paragraphs' not in doc.spans:
+                Vectorizer.add_default_paragraphs(doc)
+            parag_idx = Vectorizer.index_paragraphs(doc.spans['paragraphs'])
+
+        get_doc_name = 'doc_name' in data_dict
+        labeled_sents_id = set()
+        for concept in concepts:
+            if len(type_filter) > 0 and concept.label_ not in type_filter:
+                continue
+            context_sents_ids = sent_idx.search(concept.start, concept.end)
+            for id in context_sents_ids:
+                labeled_sents_id.add(id.data)
+                context = context_sents[id.data]
+                if concept.start >= context[0].start and concept.end <= context[-1].end:
+                    data_dict['X'].append(' '.join([str(s) for s in context]))
+                    data_dict['y'].append(concept.label_)
+                    data_dict['concept'].append(str(concept))
+                    if parag_context_top_n > 0:
+                        data_dict['paragcontext'].append(
+                            Vectorizer.get_paragcontext(concept, parag_context_top_n, parag_idx))
+                    if get_doc_name:
+                        data_dict['doc_name'].append(doc_name)
+        for i, context in enumerate(context_sents):
+            if i not in labeled_sents_id:
+                data_dict['X'].append(' '.join([str(s) for s in context]))
+                data_dict['y'].append(default_label)
+                data_dict['concept'].append('')
+                if parag_context_top_n > 0:
+                    data_dict['paragcontext'].append(
+                        Vectorizer.get_paragcontext(context[0], parag_context_top_n, parag_idx))
+                if get_doc_name:
+                    data_dict['doc_name'].append(doc_name)
+        return data_dict
+
+    @staticmethod
     def to_data_dict_on_type_attr_values(concepts: List[Span], type_filter: Dict = dict(),
                                          default_label: str = "NEG",
                                          data_dict: dict = {'X': [], 'concept': [], 'y': []},
                                          sent_idx: IntervalTree = None, context_sents: List[List[Span]] = None,
-                                         doc_name: str = '') -> Dict:
+                                         doc_name: str = '', parag_context_top_n: int = 0) -> Dict:
         """
         Convert a SpaCy doc into a labeled data dictionary. Assuming the doc has been labeled based on concepts(snippets), Vectorizer
         extends the input to the concepts' context sentences (depends on the sent_window size), generate labeled context
@@ -507,11 +604,18 @@ class Vectorizer:
         @param sent_idx: an IntervalTree built with all sentences in the doc
         @param context_sents: a 2-d list of sentences with predefined window size.
         @param doc_name: doc file name (for tracking purpose)
+        @param parag_context_top_n: use top n characters as paragraph context to generate paragcontext column.
         @return: a dictionary
         """
         if sent_idx is None or context_sents is None:
             return data_dict
         get_doc_name = 'doc_name' in data_dict
+
+        if parag_context_top_n > 0 and len(context_sents) > 0:
+            doc = context_sents[0][0].doc
+            if 'paragraphs' not in doc.spans:
+                Vectorizer.add_default_paragraphs(doc)
+            parag_idx = Vectorizer.index_paragraphs(doc.spans['paragraphs'])
 
         labeled_sents_id = set()
         for concept in concepts:
@@ -528,6 +632,9 @@ class Vectorizer:
                             data_dict['X'].append(' '.join([str(s) for s in context]))
                             data_dict['y'].append(conclusion)
                             data_dict['concept'].append(str(concept))
+                            if parag_context_top_n > 0:
+                                data_dict['paragcontext'].append(
+                                    Vectorizer.get_paragcontext(concept, parag_context_top_n, parag_idx))
                             if get_doc_name:
                                 data_dict['doc_name'].append(doc_name)
         # add unlabeled sentences as default label
@@ -536,6 +643,9 @@ class Vectorizer:
                 data_dict['X'].append(' '.join([str(s) for s in context]))
                 data_dict['y'].append(default_label)
                 data_dict['concept'].append('')
+                if parag_context_top_n > 0:
+                    data_dict['paragcontext'].append(
+                        Vectorizer.get_paragcontext(context[0], parag_context_top_n, parag_idx))
                 if get_doc_name:
                     data_dict['doc_name'].append(doc_name)
         return data_dict
@@ -575,9 +685,12 @@ class Vectorizer:
             keys.append(type_filter)
             return
         for attr in type_filter:
-            if not hasattr(concept._, attr):
-                return keys
-            value = getattr(concept._, attr)
+            if hasattr(concept._, attr):
+                value = getattr(concept._, attr)
+            elif hasattr(concept._, 'ANNOT_'+attr):
+                value = getattr(concept._, 'ANNOT_'+attr)
+            else:
+                continue
             if value in type_filter[attr]:
                 Vectorizer.get_mapped_name_by_attr_values(concept=concept, type_filter=type_filter[attr][value],
                                                           keys=keys)

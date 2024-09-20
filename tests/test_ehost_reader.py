@@ -16,7 +16,10 @@ from medspacy_io.reader.ehost_reader import EhostDirReader
 from medspacy_io.reader.ehost_reader import EhostDocReader
 #from medspacy_io.reader.ehost_reader import EhostDirReader
 #from medspacy_io.reader.ehost_reader import EhostDocReader
-
+import os
+script_directory = os.path.dirname(os.path.abspath(__file__))
+        # Change the current working directory to the script's directory
+os.chdir(script_directory)
 
 class test_eHost_reader(unittest.TestCase):
 

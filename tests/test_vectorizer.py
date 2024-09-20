@@ -1,5 +1,6 @@
 import unittest
 from collections import OrderedDict
+import os
 
 from spacy.lang.en import English
 from spacy.tokens.span import Span
@@ -9,7 +10,9 @@ from medspacy_io.reader import EhostDirReader
 from medspacy_io.vectorizer import Vectorizer
 from spacy.tokens.doc import Doc
 import pandas as pd
-
+script_directory = os.path.dirname(os.path.abspath(__file__))
+# Change the current working directory to the script's directory
+os.chdir(script_directory)
 
 class TestEhostReader(unittest.TestCase):
 
