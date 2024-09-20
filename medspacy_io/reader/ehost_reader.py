@@ -8,7 +8,7 @@ from lxml.etree import Element, iterparse
 from spacy.language import Language
 from spacy.tokens.span import Span
 
-from .base_reader import BaseDocReader, BaseDirReader
+from base_reader import BaseDocReader, BaseDirReader
 
 
 class EhostDocReader(BaseDocReader):
@@ -40,7 +40,6 @@ class EhostDocReader(BaseDocReader):
         """
         self.schema_set = False
         self.attr_names = self.set_attributes(schema_file=schema_file, encoding=encoding)
-        print("ALL ATTRIBUTES FROM SCHEMA:", self.attr_names)
         if store_anno_string:
             if not Span.has_extension("span_txt"):
                 Span.set_extension("span_txt", default="")
@@ -62,7 +61,6 @@ class EhostDocReader(BaseDocReader):
         """
         schema_file = self.check_file_validity(schema_file, False)
         attr_names = set()
-        
         if schema_file is not None:
             root = etree.parse(str(schema_file.absolute()))
             for attr_def in root.iter("attributeDef"):
@@ -185,7 +183,7 @@ class EhostDocReader(BaseDocReader):
                     # relations[rel_id] = (label, components) # component is target annot ref
                     # for looking up the source
                     classes[rel_id] = [label, []]
-                    
+
         if sort_spans:
             spans = sorted(spans.items(), key=lambda x: x[1][0])
         return spans, classes, attributes, relations
