@@ -134,7 +134,7 @@ class BratDocReader(BaseDocReader):
             elif row[0] == 'R' or row[0] == 'E':
                 rel_id, label, components = self.parse_relation_tag(row)
                 if rel_id is not None:
-                    relations[rel_id] = (label, components)
+                    relations[rel_id] = (rel_id, label, components)
         if sort_spans:
             spans = sorted(spans.items(), key=lambda x: x[1][0])
         else:

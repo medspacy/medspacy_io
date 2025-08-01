@@ -14,9 +14,15 @@ class BaseDocReader(object):
     A base class for document reader, define interfaces for subclasses to inherent from
     """
 
-    def __init__(self, nlp: Language = None, support_overlap: bool = False,
-                 log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
-                 **kwargs):
+    def __init__(
+        self,
+        nlp: Language = None,
+        support_overlap: bool = False,
+        log_level: int = logging.WARNING,
+        encoding: str = None,
+        doc_name_depth: int = 0,
+        **kwargs
+    ):
         """
 
         @param nlp: Spacy Language model
@@ -52,8 +58,7 @@ class BaseDocReader(object):
         self.logger = logging.getLogger(__name__)
         self.logger = logging.getLogger()
         handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+        formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.logger.setLevel(level)
@@ -147,7 +152,6 @@ class BaseDocReader(object):
         """
         self.logger.debug(f'parse: {anno}')
         sorted_span, classes, attributes, relations = self.parse_to_dicts(anno, sort_spans=True)
-        # print("PARSE_TO_DIC attributes:", attributes)
         if self.support_overlap:
             return self.process_support_overlaps(doc, sorted_span, classes, attributes, relations)
         else:
@@ -167,9 +171,14 @@ class BaseDocReader(object):
         """
         return (None, None, None, None,)
 
-    def process_without_overlaps(self, doc: Doc, sorted_spans: _OrderedDictItemsView, classes: OrderedDict,
-                                 attributes: OrderedDict,
-                                 relations: OrderedDict) -> Doc:
+    def process_without_overlaps(
+        self,
+        doc: Doc,
+        sorted_spans: _OrderedDictItemsView,
+        classes: OrderedDict,
+        attributes: OrderedDict,
+        relations: OrderedDict,
+    ) -> Doc:
         """:arg a SpaCy Doc, can be overwriten by the subclass as needed.
             This function will add spans to doc.ents (defined by SpaCy as default)
             which doesn't allow overlapped annotations.
@@ -267,8 +276,7 @@ class BaseDocReader(object):
             @param relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
             @return: annotated Doc
         """
-        # print("ATTRIBUTES Ordered Dic:", attributes, "ATTRIBUTES name list:", attributes.keys())
-        existing_concepts: dict = dict()
+        existing_concepts: dict = doc._.concepts
         # token_left_bound = 0
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
@@ -331,13 +339,11 @@ class BaseDocReader(object):
                                                                              re.sub('\s+', ' ', str(span))))
 
                 for attr_id in classes[id][1]:
-
                     if attr_id not in attributes:
                         continue
                     attr_name = attributes[attr_id][0]
                     attr_value = attributes[attr_id][1]
-                    self.logger.debug("THE ATTRIBUTES FOR:", classes[id][0], " IS ", attributes[attr_id][0],
-                                      attributes[attr_id][1])
+                    self.logger.debug(f"THE ATTRIBUTES FOR: {classes[id][0]} IS {attributes[attr_id][0]} {attributes[attr_id][1]}")
                     if Span.has_extension(attr_name):
                         setattr(span._, attr_name, attr_value)
                     else:
@@ -422,8 +428,7 @@ class BaseDocReader(object):
                 return mid
             elif mid > 1 and doc[mid].idx > start >= doc[mid - 1].idx + len(doc[mid - 1]):
                 # sometime, manually created annotation can start outside SpaCy tokens, so adjustment is needed here.
-                self.logger.debug(
-                    "return mid={} when start {} between token {} and token []".format(mid, start, mid, mid - 1))
+                self.logger.debug("return mid={} when start {} between token {} and token []".format(mid, start, mid, mid - 1))
                 return mid
             elif doc[mid].idx > start:
                 if mid > 0:
@@ -519,8 +524,7 @@ class BaseDirReader:
             try:
                 doc = self.reader.read(txt_file)
                 docs.append(doc)
-            except Exception as e:
-                # self.logger.warn(e)
+            except:
                 raise IOError('An error occured while parsing annotation for document: {}'.format(txt_file.absolute()))
             pass
         return docs
