@@ -1,1 +1,12 @@
-recursive-include tests/data
+# Include documentation
+include README.rst
+include LICENSE
+
+# Include configuration files
+include pyproject.toml
+
+# Include type information
+include medspacy_io/py.typed
+
+# Include version file
+include medspacy_io/version.py
