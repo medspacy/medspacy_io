@@ -333,10 +333,10 @@ class BaseDocReader(object):
                 span._.annotation_id = id  # This is added, otherwise relation cannot be referred
                 if self.logger.isEnabledFor(logging.DEBUG):
                     import re
-                    if re.sub('\s+', ' ', span._.span_txt) != re.sub('\s+', ' ', str(span)):
+                    if re.sub(r'\s+', ' ', span._.span_txt) != re.sub(r'\s+', ' ', str(span)):
                         self.logger.debug('{}[{}:{}]\n\t{}<>\n\t{}<>'.format(classes[id][0], token_start, token_end,
-                                                                             re.sub('\s+', ' ', span._.span_txt),
-                                                                             re.sub('\s+', ' ', str(span))))
+                                                                             re.sub(r'\s+', ' ', span._.span_txt),
+                                                                             re.sub(r'\s+', ' ', str(span))))
 
                 for attr_id in classes[id][1]:
                     if attr_id not in attributes:
