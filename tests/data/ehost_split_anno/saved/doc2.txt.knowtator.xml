@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<annotations textSource="doc2.txt">
+    <annotation>
+        <mention id="EHOST_Instance_14" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="571" end="572" />
+        <spannedText />
+        <creationDate>Wed Apr 16 10:18:30 MDT 2025</creationDate>
+    </annotation>
+    <classMention id="EHOST_Instance_14">
+        <mentionClass id="CONCEPT" />
+    </classMention>
+    <annotation>
+        <mention id="EHOST_Instance_15" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="578" end="587" />
+        <spannedText>attention</spannedText>
+        <creationDate>Mon Aug 04 10:11:52 MDT 2025</creationDate>
+    </annotation>
+    <classMention id="EHOST_Instance_15">
+        <mentionClass id="CONCEPT">attention</mentionClass>
+    </classMention>
+    <annotation>
+        <mention id="EHOST_Instance_16" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="733" end="739" />
+        <spannedText>Bishop</spannedText>
+        <creationDate>Mon Aug 04 10:12:50 MDT 2025</creationDate>
+    </annotation>
+    <classMention id="EHOST_Instance_16">
+        <mentionClass id="CONCEPT">Bishop</mentionClass>
+    </classMention>
+    <annotation>
+        <mention id="EHOST_Instance_17" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="628" end="635" />
+        <span start="495" end="535" />
+        <spannedText>skin was closed at the level of the skin ... incised</spannedText>
+        <creationDate>Mon Aug 04 10:10:47 MDT 2025</creationDate>
+    </annotation>
+    <classMention id="EHOST_Instance_17">
+        <mentionClass id="CONCEPT">skin was closed at the level of the skin ... incised</mentionClass>
+    </classMention>
+    <annotation>
+        <mention id="EHOST_Instance_18" />
+        <annotator id="eHOST_2010">sjl</annotator>
+        <span start="748" end="759" />
+        <spannedText>and excised</spannedText>
+        <creationDate>Mon Aug 04 10:10:05 MDT 2025</creationDate>
+    </annotation>
+    <classMention id="EHOST_Instance_18">
+        <mentionClass id="CONCEPT">and excised</mentionClass>
+    </classMention>
+    <eHOST_Adjudication_Status version="1.0">
+        <Adjudication_Selected_Annotators version="1.0" />
+        <Adjudication_Selected_Classes version="1.0" />
+        <Adjudication_Others>
+            <CHECK_OVERLAPPED_SPANS>false</CHECK_OVERLAPPED_SPANS>
+            <CHECK_ATTRIBUTES>false</CHECK_ATTRIBUTES>
+            <CHECK_RELATIONSHIP>false</CHECK_RELATIONSHIP>
+            <CHECK_CLASS>false</CHECK_CLASS>
+            <CHECK_COMMENT>false</CHECK_COMMENT>
+        </Adjudication_Others>
+    </eHOST_Adjudication_Status>
+</annotations>
+

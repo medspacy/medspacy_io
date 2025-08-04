@@ -16,10 +16,10 @@ class BaseDocReader(object):
 
     def __init__(
         self,
-        nlp: Language = None,
+        nlp: Union[Language,None] = None,
         support_overlap: bool = False,
         log_level: int = logging.WARNING,
-        encoding: str = None,
+        encoding: Union[str,None] = None,
         doc_name_depth: int = 0,
         **kwargs
     ):

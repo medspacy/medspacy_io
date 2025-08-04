@@ -1,5 +1,5 @@
 import logging
-from collections import OrderedDict
+from collections import OrderedDict, _OrderedDictItemsView
 from pathlib import Path
 from typing import Union, Tuple, Set
 
@@ -15,8 +15,8 @@ class EhostDocReader(BaseDocReader):
     """ This is a subclass of BaseDocReader to read in eHOST format files and generate SpaCy Docs
     """
 
-    def __init__(self, nlp: Language = None, support_overlap: bool = False,
-                 log_level: int = logging.WARNING, encoding: str = None, doc_name_depth: int = 0,
+    def __init__(self, nlp: Union[Language,None] = None, support_overlap: bool = False,
+                 log_level: int = logging.WARNING, encoding: Union[str,None] = None, doc_name_depth: int = 0,
                  schema_file: Union[str, Path] = '', store_anno_string: bool = False,
                  use_adjudication: bool = False, **kwargs):
         """
@@ -39,6 +39,8 @@ class EhostDocReader(BaseDocReader):
         @param kwargs:other parameters
         """
         self.schema_set = False
+        self.store_anno_string = store_anno_string  # Controls whether to include span text in output
+        self.use_adjudication = use_adjudication  # Initialize use_adjudication attribute
         self.attr_names = self.set_attributes(schema_file=schema_file, encoding=encoding)
         if store_anno_string:
             if not Span.has_extension("span_txt"):
@@ -49,7 +51,7 @@ class EhostDocReader(BaseDocReader):
                          use_adjudication=use_adjudication, **kwargs)
         pass
 
-    def set_attributes(self, schema_file: Union[str, Path] = '', encoding: str = None) -> Set:
+    def set_attributes(self, schema_file: Union[str, Path] = '', encoding: Union[str,None] = None) -> Set:
         """
 
 
@@ -108,7 +110,7 @@ class EhostDocReader(BaseDocReader):
         self.check_file_validity(anno_file)
         return anno_file
 
-    def parse_to_dicts(self, xml_file: str, sort_spans: bool = False) -> Tuple[OrderedDict, OrderedDict]:
+    def parse_to_dicts(self, anno: str, sort_spans: bool = False) -> Tuple[_OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
         """
         Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
         @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
@@ -119,7 +121,7 @@ class EhostDocReader(BaseDocReader):
              attributes: a OrderedDict to map a attribute id to (attribute_name, attribute_value)
              relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
         """
-        iter = etree.iterparse(xml_file, events=('start',))
+        iter = etree.iterparse(anno, events=('start',))
         # this doesn't seem elegant, but is said to be the fastest way
         spans = OrderedDict()
         classes = dict()
@@ -195,6 +197,15 @@ class EhostDocReader(BaseDocReader):
     #   <spannedText>pain</spannedText>
     #   <creationDate>Sun Apr 19 19:30:11 MDT 2020</creationDate>
     # </annotation>
+    # For split annotations:
+    # <annotation>
+    #   <mention id="EHOST_Instance_17" />
+    #   <annotator id="eHOST_2010">sjl</annotator>
+    #   <span start="628" end="635" />
+    #   <span start="495" end="535" />
+    #   <spannedText>skin was closed at the level of the skin ... incised</spannedText>
+    #   <creationDate>Mon Aug 04 10:10:47 MDT 2025</creationDate>
+    # </annotation>
     def parse_annotation_tag(self, ele: Element, iter: iterparse) -> Tuple:
         """
 
@@ -203,18 +214,42 @@ class EhostDocReader(BaseDocReader):
         @return: a Tuple of (annotation_id, label, absolute start offset, absolute end offset, covered span text)
         """
         id = None
-        start = -1
-        end = -1
+        start = None
+        end = None
         span_text = None
-        for i in range(0, 4):
-            eve, child = iter.__next__()
-            if child.tag == 'mention':
-                id = child.get('id')
-            elif child.tag == 'span':
-                start = int(child.get('start'))
-                end = int(child.get('end'))
-            elif child.tag == 'spannedText':
-                span_text = child.text
+        
+        # Continue parsing until we reach the end of the annotation element
+        while True:
+            try:
+                eve, child = iter.__next__()
+                if child.tag == 'mention':
+                    id = child.get('id')
+                elif child.tag == 'span':
+                    # Update start and end immediately for efficiency
+                    span_start = int(child.get('start'))
+                    span_end = int(child.get('end'))
+                    
+                    # Update minimum start and maximum end
+                    if start is None or span_start < start:
+                        start = span_start
+                    if end is None or span_end > end:
+                        end = span_end
+                        
+                elif child.tag == 'spannedText':
+                    span_text = child.text
+                elif child.tag == 'creationDate':
+                    # This is typically the last element, break after processing it
+                    break
+            except StopIteration:
+                # End of document reached
+                break
+        
+        # Handle case where no spans were found
+        if start is None:
+            start = -1
+        if end is None:
+            end = -1
+        
         return id, start, end, span_text
 
     # <stringSlotMention id="EHOST_Instance_8">
