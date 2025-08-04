@@ -7,12 +7,44 @@ on:
   release:
     types: [published]
   workflow_dispatch:  # Allow manual triggering
+    inputs:
+      publish:
+        description: 'Publish to PyPI'
+        required: false
+        default: false
+        type: boolean
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
 
 jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+    - uses: actions/checkout@v4.2.2
+    - name: Set up Python
+      uses: actions/setup-python@v5.6.0
+      with:
+        python-version: '3.11'
+    - name: Get version from project
+      id: get_version
+      run: |
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from medspacy_io.version import __version__
+        print(f'version={__version__}')
+        " >> $GITHUB_OUTPUT
+
   build:
+    needs: get-version
     runs-on: ubuntu-latest
     
     steps:
@@ -55,10 +87,30 @@ jobs:
         pip install dist/*.whl
         python -c "import medspacy_io; print('Successfully imported medspacy_io')"
 
+  create-release:
+    needs: [get-version, build, test-install]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.create_release
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4.2.2
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ needs.get-version.outputs.version }}
+        name: Release v${{ needs.get-version.outputs.version }}
+        body: |
+          Release version ${{ needs.get-version.outputs.version }}
+          
+          Built from commit: ${{ github.sha }}
+        draft: false
+        prerelease: false
+
   publish:
     needs: [build, test-install]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish)
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 
