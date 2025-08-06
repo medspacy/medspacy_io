@@ -7,6 +7,7 @@ from lxml import etree
 from lxml.etree import Element, iterparse
 from spacy.language import Language
 from spacy.tokens.span import Span
+from loguru import logger
 
 from .base_reader import BaseDocReader, BaseDirReader
 
@@ -18,7 +19,7 @@ class EhostDocReader(BaseDocReader):
         self,
         nlp: Union[Language, None] = None,
         support_overlap: bool = False,
-        log_level: int = logging.WARNING,
+        log_level: str = "WARNING",
         encoding: Union[str, None] = None,
         doc_name_depth: int = 0,
         schema_file: Union[str, Path] = "",

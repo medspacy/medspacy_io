@@ -1,0 +1,29 @@
+# CODEOWNERS file for medspacy_io
+# This file defines individuals or teams responsible for code in this repository
+# For more information: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - these users will be requested for review for all changes
+# unless a more specific rule takes precedence
+* @medspacy
+
+# Python source code
+*.py @medspacy
+medspacy_io/ @medspacy
+
+# Configuration files
+pyproject.toml @medspacy
+setup.py @medspacy
+requirements*.txt @medspacy
+
+# GitHub workflows and configuration
+.github/ @medspacy
+
+# Documentation
+README.rst @medspacy
+*.md @medspacy
+
+# Test files
+tests/ @medspacy
+
+# Development notebooks (may want different reviewers for these)
+dev_notebooks/ @medspacy

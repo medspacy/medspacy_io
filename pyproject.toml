@@ -42,6 +42,7 @@ dependencies = [
     "pandas>=0.10.0",
     "quicksectx>=0.3.5",
     "pyrush>=1.0.8",
+    "loguru",
 ]
 
 [project.optional-dependencies]
