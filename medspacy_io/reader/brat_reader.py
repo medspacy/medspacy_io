@@ -43,11 +43,12 @@ class BratDocReader(BaseDocReader):
         self.schema_set = False
         # Initialize store_anno_string before calling set_attributes
         self.store_anno_string = store_anno_string
-        
+
         # Set up a temporary logger for use in set_attributes before super().__init__ is called
         from loguru import logger as temp_logger
+
         self.logger = temp_logger
-        
+
         self.attr_names = self.set_attributes(
             schema_file=schema_file, encoding=encoding
         )

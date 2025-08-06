@@ -471,7 +471,8 @@ class Vectorizer:
                     sent_id = sent_idx.search(concept.start, concept.end)
                     if sent_id is None or len(sent_id) == 0:
                         logger.error(
-                            "Error: no overlapped sentence is found for concept: {}", concept
+                            "Error: no overlapped sentence is found for concept: {}",
+                            concept,
                         )
                         continue
                     sent_id = sent_id[0].data
@@ -571,7 +572,8 @@ class Vectorizer:
                     sent_id = sent_idx.search(concept.start, concept.end)
                     if sent_id is None or len(sent_id) == 0:
                         logger.error(
-                            "Error: no overlapped sentence is found for concept: {}", concept
+                            "Error: no overlapped sentence is found for concept: {}",
+                            concept,
                         )
                         continue
                     sent_id = sent_id[0].data
