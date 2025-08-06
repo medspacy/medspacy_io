@@ -130,7 +130,7 @@ class TestBratReader(unittest.TestCase):
             support_overlap=True,
             store_anno_string=True,
             encoding="UTF8",
-            log_level=logging.DEBUG,
+            log_level="DEBUG",
         )
         doc = breader.read("data/brat_test_corpus/000-introduction.txt")
         for span in doc.ents:
@@ -149,7 +149,7 @@ class TestBratReader(unittest.TestCase):
             support_overlap=False,
             store_anno_string=True,
             encoding="UTF8",
-            log_level=logging.DEBUG,
+            log_level="DEBUG",
         )
         doc = breader.read("data/brat_test_corpus/040-text_span_annotation.txt")
         for span in doc.ents:

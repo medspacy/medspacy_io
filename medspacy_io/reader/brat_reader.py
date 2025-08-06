@@ -5,6 +5,7 @@ from typing import Union, Tuple, Set
 import re
 from spacy.language import Language
 from spacy.tokens.span import Span
+from loguru import logger
 
 from .base_reader import BaseDocReader, BaseDirReader
 
@@ -16,7 +17,7 @@ class BratDocReader(BaseDocReader):
         self,
         nlp: Language = None,
         support_overlap: bool = False,
-        log_level: int = logging.WARNING,
+        log_level: str = "WARNING",
         encoding: str = None,
         doc_name_depth: int = 0,
         schema_file: Union[str, Path] = "",
@@ -40,6 +41,13 @@ class BratDocReader(BaseDocReader):
         @param kwargs:other parameters
         """
         self.schema_set = False
+        # Initialize store_anno_string before calling set_attributes
+        self.store_anno_string = store_anno_string
+        
+        # Set up a temporary logger for use in set_attributes before super().__init__ is called
+        from loguru import logger as temp_logger
+        self.logger = temp_logger
+        
         self.attr_names = self.set_attributes(
             schema_file=schema_file, encoding=encoding
         )
@@ -74,7 +82,7 @@ class BratDocReader(BaseDocReader):
         attr_names = set()
         attr_conf_start = False
         if schema_file is not None and schema_file.name.endswith("conf"):
-            print("found annotation.conf file")
+            self.logger.info("found annotation.conf file")
             for row in schema_file.read_text(encoding=encoding).split("\n"):
                 if len(row.strip()) == 0 or row[0] == "#":
                     continue
