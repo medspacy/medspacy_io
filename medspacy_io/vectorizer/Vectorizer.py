@@ -1,3 +1,4 @@
+import logging
 from typing import List, Set, Dict, Union
 from collections import OrderedDict
 import numpy as np
@@ -7,6 +8,7 @@ from quicksectx import IntervalTree
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 from spacy.tokens.token import Token
+from loguru import logger
 
 
 class Vectorizer:
@@ -389,7 +391,7 @@ class Vectorizer:
             elif isinstance(value, Dict):
                 Vectorizer.get_output_labels(value, output_labels)
             else:
-                print("Unsupported value type in type_filter: {}".format(type(value)))
+                logger.warning("Unsupported value type in type_filter: {}", type(value))
 
     @staticmethod
     def to_seq_data_dict_on_types(
@@ -468,10 +470,9 @@ class Vectorizer:
                     )
                     sent_id = sent_idx.search(concept.start, concept.end)
                     if sent_id is None or len(sent_id) == 0:
-                        print(
-                            "Error: no overlapped sentence is found for concept: {}".format(
-                                concept
-                            )
+                        logger.error(
+                            "Error: no overlapped sentence is found for concept: {}",
+                            concept,
                         )
                         continue
                     sent_id = sent_id[0].data
@@ -570,10 +571,9 @@ class Vectorizer:
                     label = concept.label_
                     sent_id = sent_idx.search(concept.start, concept.end)
                     if sent_id is None or len(sent_id) == 0:
-                        print(
-                            "Error: no overlapped sentence is found for concept: {}".format(
-                                concept
-                            )
+                        logger.error(
+                            "Error: no overlapped sentence is found for concept: {}",
+                            concept,
                         )
                         continue
                     sent_id = sent_id[0].data

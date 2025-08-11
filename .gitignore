@@ -130,3 +130,7 @@ dmypy.json
 .iml
 /data
 .idea
+
+# Exclude commit and PR message files
+COMMIT_MESSAGE.md
+PULL_REQUEST.md

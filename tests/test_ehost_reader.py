@@ -133,7 +133,7 @@ class test_eHost_reader(unittest.TestCase):
             support_overlap=False,
             store_anno_string=True,
             encoding="UTF8",
-            log_level=logging.DEBUG,
+            log_level="DEBUG",
         )
         doc = ereader.read("data/ehost_test_corpus/corpus/doc2.txt")
         for span in doc.ents:
@@ -148,7 +148,7 @@ class test_eHost_reader(unittest.TestCase):
             schema_file="data/ehost_test_corpus2/config/projectschema.xml",
             support_overlap=True,
             store_anno_string=True,
-            log_level=logging.DEBUG,
+            log_level="DEBUG",
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc2.txt")
         for spans in doc.spans.values():

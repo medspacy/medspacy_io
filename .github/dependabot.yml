@@ -16,10 +16,6 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
-    reviewers:
-      - "medspacy"
-    assignees:
-      - "medspacy"
     
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"

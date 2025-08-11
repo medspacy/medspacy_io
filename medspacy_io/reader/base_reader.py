@@ -1,4 +1,5 @@
 import logging
+import sys
 from collections import OrderedDict, _OrderedDictItemsView
 from pathlib import Path
 from typing import List, Union, Type, Tuple
@@ -7,6 +8,7 @@ from spacy.language import Language
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 from spacy.tokens import SpanGroup
+from loguru import logger
 
 
 class BaseDocReader(object):
@@ -18,7 +20,7 @@ class BaseDocReader(object):
         self,
         nlp: Union[Language, None] = None,
         support_overlap: bool = False,
-        log_level: int = logging.WARNING,
+        log_level: str = "WARNING",
         encoding: Union[str, None] = None,
         doc_name_depth: int = 0,
         **kwargs,
@@ -54,16 +56,19 @@ class BaseDocReader(object):
             Doc.set_extension("doc_name", default="")
         pass
 
-    def set_logger(self, level: int = logging.DEBUG):
-        self.logger = logging.getLogger(__name__)
-        self.logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"
+    def set_logger(self, level: str = "WARNING"):
+        """
+        Set up loguru logger with specified level
+        """
+        # Remove default handler and add our own
+        logger.remove()
+        logger.add(
+            sys.stderr,
+            level=level.upper(),
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
         )
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(level)
+        # Keep a reference for compatibility but use loguru logger directly
+        self.logger = logger
         pass
 
     def get_txt_content(self, txt_file: Path) -> str:
@@ -394,7 +399,7 @@ class BaseDocReader(object):
                 span._.annotation_id = (
                     id  # This is added, otherwise relation cannot be referred
                 )
-                if self.logger.isEnabledFor(logging.DEBUG):
+                if logger.level("DEBUG").no <= logger._core.min_level:
                     import re
 
                     if re.sub(r"\s+", " ", span._.span_txt) != re.sub(
@@ -447,14 +452,18 @@ class BaseDocReader(object):
 
         rels = []
         for rel_source, (rel_s, rel_name, rel_target) in relations.items():
-            print("RELATION:", rel_source, rel_s, rel_name, rel_target)
+            self.logger.debug(
+                "RELATION: %s %s %s %s", rel_source, rel_s, rel_name, rel_target
+            )
             source_span = None
             target_span = None
             for cls in doc.spans.keys():
                 for sp in doc.spans[cls]:
                     # print("---ALL EHOST ID:", sp._.annotation_id, sp.text)
                     if sp._.annotation_id == rel_s:
-                        print("FIND THE SOURCE:", sp._.annotation_id, rel_s)
+                        self.logger.debug(
+                            "FIND THE SOURCE: %s %s", sp._.annotation_id, rel_s
+                        )
                         source_span = sp
                         # break
                     if sp._.annotation_id == rel_target:
