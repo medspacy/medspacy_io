@@ -28,7 +28,7 @@ jobs:
     outputs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
-    - uses: actions/checkout@v4.2.2
+    - uses: actions/checkout@v5.0.0
     - name: Set up Python
       uses: actions/setup-python@v5.6.0
       with:
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4.2.2
+    - uses: actions/checkout@v5.0.0
     - name: Set up Python
       uses: actions/setup-python@v5.6.0
       with:
@@ -94,7 +94,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v4.2.2
+    - uses: actions/checkout@v5.0.0
     - name: Download build artifacts
       uses: actions/download-artifact@v4.3.0
       with:
