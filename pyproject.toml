@@ -7,7 +7,7 @@ name = "medspacy-io"
 dynamic = ["version"]
 description = "A collection of modules to facilitate reading text from various sources and writing to various sources."
 readme = "README.rst"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "medSpaCy", email = "medspacy.dev@gmail.com"}
 ]
