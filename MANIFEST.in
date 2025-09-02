@@ -1,6 +1,5 @@
 # Include documentation
 include README.rst
-include LICENSE
 
 # Include configuration files
 include pyproject.toml
