@@ -22,6 +22,10 @@ jobs:
       uses: actions/setup-python@v5.6.0
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Clean up build artifacts
+      run: |
+        rm -rf build dist *.egg-info
     
     - name: Install dependencies
       run: |
