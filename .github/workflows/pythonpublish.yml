@@ -28,7 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump_version.outputs.version }}
-      bumped_version: ${{ steps.bump_version.outputs.bumped_version }}
     steps:
     - uses: actions/checkout@v5.0.0
     - name: Set up Python
@@ -45,28 +44,12 @@ jobs:
         print(f'version={__version__}')
         " >> $GITHUB_OUTPUT
 
-    - name: Fetch all release tags
-      id: fetch_tags
-      run: |
-        curl -s "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[].tag_name' > release_tags.txt
-
-    - name: Check and bump version if needed
+    - name: Check and bump version
       id: bump_version
-      run: |
-        VERSION="${{ steps.get_version.outputs.version }}"
-        TAG="$VERSION"
-        RELEASE_TAGS=$(cat release_tags.txt)
-        NEXT_VERSION="$VERSION"
-        while echo "$RELEASE_TAGS" | grep -qx "$NEXT_VERSION"; do
-          NEXT_VERSION=$(python -c "import re; v='$NEXT_VERSION'; m=re.search(r'(\d+)$', v); print(v[:m.start()] + str(int(m.group(1))+1) if m else v+'1')")
-        done
-        if [ "$NEXT_VERSION" != "$VERSION" ]; then
-          echo "Version $VERSION already released, bumping to $NEXT_VERSION"
-          echo "bumped_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-        else
-          echo "bumped_version=" >> $GITHUB_OUTPUT
-        fi
-        echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+      uses: jianlins/check_bump_version@v1
+      with:
+        bump-type: 'patch'
+        current-version: ${{ steps.get_version.outputs.version }}
 
   build:
     if: github.ref == 'refs/heads/main'
@@ -137,19 +120,18 @@ jobs:
         prerelease: false
 
     - name: Update version.py after release
-      if: needs.get-version.outputs.bumped_version != ''
+      if: needs.get-version.outputs.version  != ''
       run: |
-        sed -i "s/__version__ = .*/__version__ = \"${{ needs.get-version.outputs.bumped_version }}\"/" medspacy_io/version.py
+        sed -i "s/__version__ = .*/__version__ = \"${{ needs.get-version.outputs.version }}\"/" medspacy_io/version.py
         cat medspacy_io/version.py
 
-
     - name: Commit and push version change
-      if: success() && needs.get-version.outputs.bumped_version != ''
+      if: success() && needs.get-version.outputs.version  != ''
       run: |
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
         git add medspacy_io/version.py
-        git commit -m "Bump version to ${{ needs.get-version.outputs.bumped_version }} [skip ci]" || echo "No changes to commit"
+        git commit -m "Bump version to ${{ needs.get-version.outputs.version }} [skip ci]" || echo "No changes to commit"
         git push
 
     # Removed duplicate commit step
