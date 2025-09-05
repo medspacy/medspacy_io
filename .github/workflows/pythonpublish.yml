@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump_version.outputs.version }}
+      bumped_version: ${{ steps.bump_version.outputs.bumped_version }}
     steps:
     - uses: actions/checkout@v5.0.0
     - name: Set up Python
@@ -60,10 +61,14 @@ jobs:
         done
         if [ "$NEXT_VERSION" != "$VERSION" ]; then
           echo "Version $VERSION already released, bumping to $NEXT_VERSION"
-          sed -i "s/__version__ = .*/__version__ = '$NEXT_VERSION'/" medspacy_io/version.py
+          echo "bumped_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        else
+          echo "bumped_version=" >> $GITHUB_OUTPUT
         fi
         echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
         cat medspacy_io/version.py
+
+    # No artifact upload needed since we don't update the file here
 
   build:
     needs: get-version
@@ -131,14 +136,22 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Update version.py after release
+      if: needs.get-version.outputs.bumped_version != ''
+      run: |
+        sed -i "s/__version__ = .*/__version__ = '${{ needs.get-version.outputs.bumped_version }}'/" medspacy_io/version.py
+
+
     - name: Commit and push version change
-      if: success()
+      if: success() && needs.get-version.outputs.bumped_version != ''
       run: |
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
         git add medspacy_io/version.py
-        git commit -m "Bump version to ${{ needs.get-version.outputs.version }} [skip ci]" || echo "No changes to commit"
+        git commit -m "Bump version to ${{ needs.get-version.outputs.bumped_version }} [skip ci]" || echo "No changes to commit"
         git push
+
+    # Removed duplicate commit step
 
   publish:
     needs: [build, test-install]
