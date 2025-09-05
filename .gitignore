@@ -134,3 +134,4 @@ dmypy.json
 # Exclude commit and PR message files
 COMMIT_MESSAGE.md
 PULL_REQUEST.md
+tmp
