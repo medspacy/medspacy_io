@@ -26,7 +26,8 @@ jobs:
   get-version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
+      version: ${{ steps.bump_version.outputs.version }}
+      bumped_version: ${{ steps.bump_version.outputs.bumped_version }}
     steps:
     - uses: actions/checkout@v5.0.0
     - name: Set up Python
@@ -42,6 +43,29 @@ jobs:
         from medspacy_io.version import __version__
         print(f'version={__version__}')
         " >> $GITHUB_OUTPUT
+
+    - name: Fetch all release tags
+      id: fetch_tags
+      run: |
+        curl -s "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[].tag_name' > release_tags.txt
+
+    - name: Check and bump version if needed
+      id: bump_version
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        TAG="$VERSION"
+        RELEASE_TAGS=$(cat release_tags.txt)
+        NEXT_VERSION="$VERSION"
+        while echo "$RELEASE_TAGS" | grep -qx "$NEXT_VERSION"; do
+          NEXT_VERSION=$(python -c "import re; v='$NEXT_VERSION'; m=re.search(r'(\d+)$', v); print(v[:m.start()] + str(int(m.group(1))+1) if m else v+'1')")
+        done
+        if [ "$NEXT_VERSION" != "$VERSION" ]; then
+          echo "Version $VERSION already released, bumping to $NEXT_VERSION"
+          echo "bumped_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        else
+          echo "bumped_version=" >> $GITHUB_OUTPUT
+        fi
+        echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
   build:
     needs: get-version
@@ -68,15 +92,11 @@ jobs:
   test-install:
     needs: build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-    
     steps:
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5.6.0
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.11'
     - name: Download build artifacts
       uses: actions/download-artifact@v5.0.0
       with:
@@ -103,8 +123,8 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ needs.get-version.outputs.version }}
-        name: Release v${{ needs.get-version.outputs.version }}
+        tag_name: ${{ needs.get-version.outputs.version }}
+        name: Release ${{ needs.get-version.outputs.version }}
         body: |
           Release version ${{ needs.get-version.outputs.version }}
           
@@ -112,6 +132,24 @@ jobs:
         files: dist/*
         draft: false
         prerelease: false
+
+    - name: Update version.py after release
+      if: needs.get-version.outputs.bumped_version != ''
+      run: |
+        sed -i "s/__version__ = .*/__version__ = \"${{ needs.get-version.outputs.bumped_version }}\"/" medspacy_io/version.py
+        cat medspacy_io/version.py
+
+
+    - name: Commit and push version change
+      if: success() && needs.get-version.outputs.bumped_version != ''
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add medspacy_io/version.py
+        git commit -m "Bump version to ${{ needs.get-version.outputs.bumped_version }} [skip ci]" || echo "No changes to commit"
+        git push
+
+    # Removed duplicate commit step
 
   publish:
     needs: [build, test-install]

@@ -1,3 +1,1 @@
-__version__ = "0.1.0.dev36"
-if __name__ == "__main__":
-    print(__version__)
+__version__ = "0.1.0.dev39"
