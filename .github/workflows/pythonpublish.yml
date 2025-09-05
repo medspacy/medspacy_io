@@ -26,7 +26,7 @@ jobs:
   get-version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
+      version: ${{ steps.bump_version.outputs.version }}
     steps:
     - uses: actions/checkout@v5.0.0
     - name: Set up Python
@@ -42,6 +42,28 @@ jobs:
         from medspacy_io.version import __version__
         print(f'version={__version__}')
         " >> $GITHUB_OUTPUT
+
+    - name: Fetch all release tags
+      id: fetch_tags
+      run: |
+        curl -s "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[].tag_name' > release_tags.txt
+
+    - name: Check and bump version if needed
+      id: bump_version
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        TAG="v$VERSION"
+        if grep -qx "$TAG" release_tags.txt; then
+          # Bump patch version
+          NEW_VERSION=$(python -c "v='$VERSION'.split('.'); v[-1]=str(int(v[-1])+1); print('.'.join(v))")
+          echo "Version $VERSION already released, bumping to $NEW_VERSION"
+          # Update version in medspacy_io/version.py
+          sed -i "s/__version__ = .*/__version__ = '$NEW_VERSION'/" medspacy_io/version.py
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          cat medspacy_io/version.py
+        else
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        fi
 
   build:
     needs: get-version
