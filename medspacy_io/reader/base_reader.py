@@ -2,7 +2,7 @@ import logging
 import sys
 from collections import OrderedDict, _OrderedDictItemsView
 from pathlib import Path
-from typing import List, Union, Type, Tuple
+from typing import List, Union, Type, Tuple, ItemsView
 
 from spacy.language import Language
 from spacy.tokens.doc import Doc
@@ -48,12 +48,16 @@ class BaseDocReader(object):
         self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
         self.set_logger(log_level)
+        if "store_anno_string" not in kwargs:
+            self.store_anno_string = False
         if not Span.has_extension("annotation_id"):
             Span.set_extension("annotation_id", default="")
         if not Doc.has_extension("relations"):
             Doc.set_extension("relations", default=[])
         if not Doc.has_extension("doc_name"):
             Doc.set_extension("doc_name", default="")
+        if not Doc.has_extension("span_text"):
+            Doc.set_extension("span_text", default="")
         pass
 
     def set_logger(self, level: str = "WARNING"):
@@ -69,9 +73,10 @@ class BaseDocReader(object):
         )
         # Keep a reference for compatibility but use loguru logger directly
         self.logger = logger
+        self.log_level = level.upper()
         pass
 
-    def get_txt_content(self, txt_file: Path) -> str:
+    def get_txt_content(self, txt_file: Union[Path, str]) -> str:
         """
         May need to be overwritten, if the txt_file is not a txt file, e.g. an xmi file
         @param txt_file: the path of a text file
@@ -79,7 +84,7 @@ class BaseDocReader(object):
         """
         return Path(txt_file).read_text(encoding=self.encoding)
 
-    def get_anno_content(self, txt_file: Path) -> str:
+    def get_anno_content(self, txt_file: Union[Path, str]) -> str:
         """
         Either this method or infer_anno_file_path must be overwritten, as different annotation format
         use different conventions to store annotation files and text files (different in relative paths, or use a
@@ -91,18 +96,18 @@ class BaseDocReader(object):
         anno_file = self.infer_anno_file_path(txt_file)
         return Path(anno_file).read_text(encoding=self.encoding)
 
-    def infer_anno_file_path(self, txt_file: Path) -> Path:
+    def infer_anno_file_path(self, txt_file: Union[str, Path, None]) -> Path:
         """
         From the path of the text file, infer the corresponding annotation file. Need to be implemented for each subclass,
         as different annotation format use different conventions to store annotation files and txt files
         @param txt_file: the Path of a txt file
         @return: the Path of the corresponding annotation file
         """
-        return None
+        return Path("")
 
     def check_file_validity(
-        self, file: Union[str, Path], raise_error: bool = True
-    ) -> Path:
+        self, file: Union[str, Path, None], raise_error: bool = True
+    ) -> Union[Path, None]:
         """
 
         @param file: a string or Path of target file path
@@ -177,7 +182,7 @@ class BaseDocReader(object):
 
     def parse_to_dicts(
         self, anno: str, sort_spans: bool = False
-    ) -> Tuple[_OrderedDictItemsView, OrderedDict, OrderedDict, OrderedDict]:
+    ) -> Tuple[ItemsView, OrderedDict, OrderedDict, OrderedDict]:
         """
         Parse annotations into a Tuple of OrderedDicts, must be implemented in subclasses
         @param anno: The annotation string (can be a file path or file content, depends on how get_anno_content is implemented)
@@ -189,16 +194,16 @@ class BaseDocReader(object):
              relations: a OrderedDict to map a relation_id to (label, (relation_component_ids))
         """
         return (
-            None,
-            None,
-            None,
-            None,
+            OrderedDict().items(),
+            OrderedDict(),
+            OrderedDict(),
+            OrderedDict(),
         )
 
     def process_without_overlaps(
         self,
         doc: Doc,
-        sorted_spans: _OrderedDictItemsView,
+        sorted_spans: ItemsView,
         classes: OrderedDict,
         attributes: OrderedDict,
         relations: OrderedDict,
@@ -226,6 +231,7 @@ class BaseDocReader(object):
                 start, end, span_txt = span_tuple
             else:
                 start, end = span_tuple
+                span_txt = None
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
             if start < doc[0].idx:
@@ -302,7 +308,7 @@ class BaseDocReader(object):
     def process_support_overlaps(
         self,
         doc: Doc,
-        sorted_spans: _OrderedDictItemsView,
+        sorted_spans: ItemsView,
         classes: OrderedDict,
         attributes: OrderedDict,
         relations: OrderedDict,
@@ -326,6 +332,7 @@ class BaseDocReader(object):
         for id, span_tuple in sorted_spans:
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
+            span_txt = ""
             if self.store_anno_string:
                 start, end, span_txt = span_tuple
             else:
@@ -399,19 +406,21 @@ class BaseDocReader(object):
                 span._.annotation_id = (
                     id  # This is added, otherwise relation cannot be referred
                 )
-                if logger.level("DEBUG").no <= logger._core.min_level:
+                if logger.level("DEBUG").no <= logger.level(self.log_level).no:
                     import re
 
-                    if re.sub(r"\s+", " ", span._.span_txt) != re.sub(
-                        r"\s+", " ", str(span)
-                    ):
+                    if span_txt is None:
+                        span_txt = ""
+                    ehost_span_text = re.sub(r"\s+", " ", span_txt)
+                    sliced_span_text = re.sub(r"\s+", " ", str(span))
+                    if ehost_span_text != sliced_span_text:
                         self.logger.debug(
                             "{}[{}:{}]\n\t{}<>\n\t{}<>".format(
                                 classes[id][0],
                                 token_start,
                                 token_end,
-                                re.sub(r"\s+", " ", span._.span_txt),
-                                re.sub(r"\s+", " ", str(span)),
+                                ehost_span_text,
+                                sliced_span_text,
                             )
                         )
 
@@ -474,7 +483,7 @@ class BaseDocReader(object):
 
         return doc
 
-    def get_contents(self, txt_file: Union[str, Path]) -> Tuple[str, str]:
+    def get_contents(self, txt_file: Union[str, Path, None]) -> Tuple[str, str]:
         """
 
         @param txt_file: a string or Path of a text file
@@ -579,8 +588,8 @@ class BaseDirReader:
         self,
         txt_extension: str = "txt",
         recursive: bool = False,
-        nlp: Language = None,
-        docReaderClass: Type = None,
+        nlp: Union[Language, None] = None,
+        docReaderClass: Union[Type, None] = None,
         **kwargs,
     ):
         """
@@ -604,8 +613,8 @@ class BaseDirReader:
         pass
 
     def check_dir_validity(
-        self, dir: Union[str, Path], raise_error: bool = True
-    ) -> Path:
+        self, dir: Union[str, Path, None], raise_error: bool = True
+    ) -> Union[Path, None]:
         """
         Check if the given directory is valid
         @param dir: a string or Path of given directory
@@ -626,7 +635,7 @@ class BaseDirReader:
                 return None
         return dir
 
-    def read(self, txt_dir: Union[str, Path]) -> List[Doc]:
+    def read(self, txt_dir: Union[str, Union[str, Path, None]]) -> List[Doc]:
         """
         Read text files and annotation files, return a list of SpaCy Doc, need to be implemented in subclasses
         @param txt_dir: the directory contains text files (can be annotation file, if the text content and annotation content are saved in the same file).
