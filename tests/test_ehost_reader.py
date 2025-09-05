@@ -17,9 +17,12 @@ from medspacy_io.reader.ehost_reader import EhostDirReader
 from medspacy_io.reader.ehost_reader import EhostDocReader
 import os, sys
 from loguru import logger
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 test_path = Path(__file__).parent.absolute()
+
+
 class test_eHost_reader(unittest.TestCase):
 
     def test_reader_initial(self):
@@ -32,7 +35,9 @@ class test_eHost_reader(unittest.TestCase):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(nlp=English())
         spans, classes, attributes, relations = ereader.parse_to_dicts(
-            os.path.join(test_path, "data/ehost_test_corpus/saved/doc1.txt.knowtator.xml")
+            os.path.join(
+                test_path, "data/ehost_test_corpus/saved/doc1.txt.knowtator.xml"
+            )
         )
         assert len(spans) == 7
         assert len(classes) == 8
@@ -43,9 +48,14 @@ class test_eHost_reader(unittest.TestCase):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(
-            nlp=English(), schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml")
+            nlp=English(),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         for ent in doc.ents:
             assert hasattr(ent._, "ANNOT_status")
             assert hasattr(ent._, "ANNOT_rel_attr")
@@ -56,26 +66,42 @@ class test_eHost_reader(unittest.TestCase):
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(
-            nlp=English(), schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml")
+            nlp=English(),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         self.eval(doc)
 
     def test_read_doc_name(self):
         ereader = EhostDocReader(
-            nlp=English(), schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml")
+            nlp=English(),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         assert doc._.doc_name == "doc1.txt"
         ereader.doc_name_depth = 1
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))    
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         assert doc._.doc_name == r"corpus/doc1.txt"
         ereader = EhostDocReader(
             nlp=English(),
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
             doc_name_depth=2,
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))    
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         assert doc._.doc_name == r"ehost_test_corpus/corpus/doc1.txt"
 
     # spans are not in doc.spans
@@ -97,32 +123,49 @@ class test_eHost_reader(unittest.TestCase):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(
             nlp=English(),
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus2/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus2/config/projectschema.xml"
+            ),
             support_overlap=True,
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus2/corpus/doc1.txt"))
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus2/corpus/doc1.txt")
+        )
         assert len(doc.spans) == 3
         assert len(doc.spans["PreAnnotated"]) == 1
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus2/corpus/doc2.txt"))   
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus2/corpus/doc2.txt")
+        )
         assert len(doc.spans) == 7
         assert len(doc.spans["Exclusions"]) == 2
         assert len(doc.spans["Doc_Level_Purulence_Assessment"]) == 2
 
     def test_read_doc_name(self):
         ereader = EhostDocReader(
-            nlp=English(), schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml")
+            nlp=English(),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         assert doc._.doc_name == "doc1.txt"
         ereader.doc_name_depth = 1
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))    
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         assert Path(doc._.doc_name).stem == r"doc1"
         ereader = EhostDocReader(
             nlp=English(),
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
             doc_name_depth=2,
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt"))    
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc1.txt")
+        )
         print(Path(doc._.doc_name).stem)
         assert Path(doc._.doc_name).stem == r"doc1"
 
@@ -131,13 +174,17 @@ class test_eHost_reader(unittest.TestCase):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(
             nlp=English(),
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
             support_overlap=False,
             store_anno_string=True,
             encoding="UTF8",
             log_level="DEBUG",
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus/corpus/doc2.txt"))
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus/corpus/doc2.txt")
+        )
         for span in doc.ents:
             print(span._.span_txt, "<>", span)
             assert span._.span_txt.replace("\n", " ") in str(span).replace("\n", " ")
@@ -147,12 +194,16 @@ class test_eHost_reader(unittest.TestCase):
             Doc.remove_extension("concepts")
         ereader = EhostDocReader(
             nlp=English(),
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus2/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus2/config/projectschema.xml"
+            ),
             support_overlap=True,
             store_anno_string=True,
             log_level="DEBUG",
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus2/corpus/doc2.txt"))   
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus2/corpus/doc2.txt")
+        )
         for spans in doc.spans.values():
             for span in spans:
                 print(span._.span_txt, "<>", span)
@@ -166,9 +217,13 @@ class test_eHost_reader(unittest.TestCase):
         dir_reader = EhostDirReader(
             nlp=English(),
             recursive=True,
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus/config/projectschema.xml"
+            ),
         )
-        docs = dir_reader.read(txt_dir=os.path.join(test_path, "data/ehost_test_corpus/"))
+        docs = dir_reader.read(
+            txt_dir=os.path.join(test_path, "data/ehost_test_corpus/")
+        )
         assert len(docs) == 2
         for doc in docs:
             self.eval(doc)
@@ -195,10 +250,14 @@ class test_eHost_reader(unittest.TestCase):
     def test_relation_reader(self):
         ereader = EhostDocReader(
             nlp=English(),
-            schema_file=os.path.join(test_path, "data/ehost_test_corpus3_overlap/config/projectschema.xml"),
+            schema_file=os.path.join(
+                test_path, "data/ehost_test_corpus3_overlap/config/projectschema.xml"
+            ),
             support_overlap=True,
         )
-        doc = ereader.read(os.path.join(test_path, "data/ehost_test_corpus3_overlap/corpus/18305.txt"))  
+        doc = ereader.read(
+            os.path.join(test_path, "data/ehost_test_corpus3_overlap/corpus/18305.txt")
+        )
         assert len(doc._.relations) == 1
         for r in doc._.relations:
             assert r[2] == "symptom_to_symptom_section"  # relation label

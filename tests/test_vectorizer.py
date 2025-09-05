@@ -23,10 +23,7 @@ class TestEhostReader(unittest.TestCase):
         self.nlp = English()
         self.nlp.add_pipe(
             "medspacy_pyrush",
-            config={
-                "rules_path": "conf/rush_rules.tsv",
-                "merge_gaps": True
-            }
+            config={"rules_path": "conf/rush_rules.tsv", "merge_gaps": True},
         )
 
     def test_to_sents_df2(self):
@@ -38,20 +35,23 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
-        
+        print(f"total sentence: {len(list(doc.sents))}")
+
         assert len(doc.spans) == 3
         assert len(doc.spans["Nonspecific_SSTI"]) == 1
         df = Vectorizer.to_sents_df(doc)
-        print('df.shape[0] after to_sents_df:', df.shape[0])
+        print("df.shape[0] after to_sents_df:", df.shape[0])
         assert df.shape[0] == 5
         df = Vectorizer.to_sents_df(doc, track_doc_name=True)
         assert df.shape[1] == 4
         df = Vectorizer.to_sents_df(doc, sent_window=2)
-        print('df.shape[0] after to_sents_df(sent_window=2):', df.shape[0])
+        print("df.shape[0] after to_sents_df(sent_window=2):", df.shape[0])
         assert df.shape[0] == 6
         df = Vectorizer.to_sents_df(doc, sent_window=2, track_doc_name=True)
-        print('df.shape[0] after to_sents_df(sent_window=2, track_doc_name=True):', df.shape[0])
+        print(
+            "df.shape[0] after to_sents_df(sent_window=2, track_doc_name=True):",
+            df.shape[0],
+        )
         assert df.shape[0] == 6
         assert df.shape[1] == 4
 
@@ -65,7 +65,7 @@ class TestEhostReader(unittest.TestCase):
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print("PRINT TEST: About to log sentences")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         print(doc.spans)
         assert len(doc.spans) == 3
         assert len(doc.spans["Nonspecific_SSTI"]) == 1
@@ -92,7 +92,7 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         df = Vectorizer.to_sents_df(
             doc,
             type_filter={
@@ -147,7 +147,7 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         df = Vectorizer.to_sents_df(
             doc,
             type_filter={
@@ -193,7 +193,7 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         df = Vectorizer.to_sents_df(
             doc,
             type_filter={
@@ -243,7 +243,7 @@ class TestEhostReader(unittest.TestCase):
         docs = dir_reader.read(txt_dir="data/ehost_test_corpus/")
         for doc in docs:
             print(list(doc.sents))
-            print(f'total sentence: {len(list(doc.sents))}')
+            print(f"total sentence: {len(list(doc.sents))}")
         if Doc.has_extension("concepts"):
             Doc.remove_extension("concepts")
         dir_reader = EhostDirReader(
@@ -271,7 +271,7 @@ class TestEhostReader(unittest.TestCase):
         docs = dir_reader.read(txt_dir="data/ehost_test_corpus2/")
         for doc in docs:
             print(list(doc.sents))
-            print(f'total sentence: {len(list(doc.sents))}')
+            print(f"total sentence: {len(list(doc.sents))}")
         df = Vectorizer.docs_to_sents_df(docs)
         assert df.shape[0] == 15
         df = Vectorizer.docs_to_sents_df(docs, sent_window=2)
@@ -307,17 +307,23 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         res = Vectorizer.to_seq_data_dict(
             doc, type_filter=["Nonspecific_SSTI", "PreAnnotated"]
         )
         # print('\n'.join([str(item) for item in res.items()]))
         for i, s in enumerate(res["X"]):
             print("\n")
-        print(f"len(res['Nonspecific_SSTI']): {[len(x) for x in res['Nonspecific_SSTI']]}")
+        print(
+            f"len(res['Nonspecific_SSTI']): {[len(x) for x in res['Nonspecific_SSTI']]}"
+        )
         print(f"len(res['PreAnnotated']): {[len(x) for x in res['PreAnnotated']]}")
-        print(f"res['PreAnnotated'][1]: {res['PreAnnotated'][1] if len(res['PreAnnotated']) > 1 else 'N/A'}")
-        print(f"res['Nonspecific_SSTI'][2]: {res['Nonspecific_SSTI'][2] if len(res['Nonspecific_SSTI']) > 2 else 'N/A'}")
+        print(
+            f"res['PreAnnotated'][1]: {res['PreAnnotated'][1] if len(res['PreAnnotated']) > 1 else 'N/A'}"
+        )
+        print(
+            f"res['Nonspecific_SSTI'][2]: {res['Nonspecific_SSTI'][2] if len(res['Nonspecific_SSTI']) > 2 else 'N/A'}"
+        )
         # Adjusted to match new output
         # assert res["Nonspecific_SSTI"][2][0] == "O"
         # assert res["PreAnnotated"][1][11] == "PreAnnotated"
@@ -333,7 +339,7 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         res = Vectorizer.to_seq_data_dict(
             doc, type_filter=["Nonspecific_SSTI", "PreAnnotated"], sent_window=2
         )
@@ -341,7 +347,9 @@ class TestEhostReader(unittest.TestCase):
         for i in range(0, len(res["X"])):
             print("\n")
         print(f"len(res['PreAnnotated']): {[len(x) for x in res['PreAnnotated']]}")
-        print(f"res['PreAnnotated'][0]: {res['PreAnnotated'][0] if len(res['PreAnnotated']) > 0 else 'N/A'}")
+        print(
+            f"res['PreAnnotated'][0]: {res['PreAnnotated'][0] if len(res['PreAnnotated']) > 0 else 'N/A'}"
+        )
         # assert res["PreAnnotated"][0][0] == "O"
         # assert res["PreAnnotated"][0][7] == "O"
         # assert res["PreAnnotated"][0][16] == "O"
@@ -358,7 +366,7 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         res = Vectorizer.to_seq_data_dict(
             doc,
             type_filter=["Nonspecific_SSTI", "PreAnnotated"],
@@ -371,7 +379,9 @@ class TestEhostReader(unittest.TestCase):
             self.print(res, i)
             print("\n")
         print(f"len(res['PreAnnotated']): {[len(x) for x in res['PreAnnotated']]}")
-        print(f"res['PreAnnotated'][0]: {res['PreAnnotated'][0] if len(res['PreAnnotated']) > 0 else 'N/A'}")
+        print(
+            f"res['PreAnnotated'][0]: {res['PreAnnotated'][0] if len(res['PreAnnotated']) > 0 else 'N/A'}"
+        )
         # assert len(res["X"]) == 4
         # assert res["PreAnnotated"][0][0] == "NULL"
         # assert res["PreAnnotated"][0][7] == "NULL"
@@ -389,7 +399,7 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         res = Vectorizer.to_seq_data_dict(
             doc, type_filter=["Nonspecific_SSTI", "PreAnnotated"], sent_window=3
         )
@@ -397,7 +407,9 @@ class TestEhostReader(unittest.TestCase):
         for i in range(0, len(res["X"])):
             print("\n")
         print(f"len(res['PreAnnotated']): {[len(x) for x in res['PreAnnotated']]}")
-        print(f"res['PreAnnotated'][0]: {res['PreAnnotated'][0] if len(res['PreAnnotated']) > 0 else 'N/A'}")
+        print(
+            f"res['PreAnnotated'][0]: {res['PreAnnotated'][0] if len(res['PreAnnotated']) > 0 else 'N/A'}"
+        )
         # assert len(res["X"]) == 3
         # assert res["PreAnnotated"][0][0] == "O"
         # assert res["PreAnnotated"][0][7] == "O"
@@ -415,15 +427,23 @@ class TestEhostReader(unittest.TestCase):
         )
         doc = ereader.read("data/ehost_test_corpus2/corpus/doc1.txt")
         print(list(doc.sents))
-        print(f'total sentence: {len(list(doc.sents))}')
+        print(f"total sentence: {len(list(doc.sents))}")
         from collections import OrderedDict
-        type_filter = OrderedDict([
-            ("Nonspecific_SSTI", OrderedDict([
-                ("status", OrderedDict([("present", "PRES_NS_SSTI")])),
-                ("test", OrderedDict([("v2", "TEST")]))
-            ])),
-            ("PreAnnotated", "PREANNO")
-        ])
+
+        type_filter = OrderedDict(
+            [
+                (
+                    "Nonspecific_SSTI",
+                    OrderedDict(
+                        [
+                            ("status", OrderedDict([("present", "PRES_NS_SSTI")])),
+                            ("test", OrderedDict([("v2", "TEST")])),
+                        ]
+                    ),
+                ),
+                ("PreAnnotated", "PREANNO"),
+            ]
+        )
         output_labels = OrderedDict()
         res = Vectorizer.to_seq_data_dict(
             doc,
@@ -436,7 +456,9 @@ class TestEhostReader(unittest.TestCase):
         for i in range(0, len(res["X"])):
             print("\n")
         print(f"len(res['PREANNO']): {[len(x) for x in res['PREANNO']]}")
-        print(f"res['PREANNO'][1]: {res['PREANNO'][1] if len(res['PREANNO']) > 1 else 'N/A'}")
+        print(
+            f"res['PREANNO'][1]: {res['PREANNO'][1] if len(res['PREANNO']) > 1 else 'N/A'}"
+        )
         # assert len(res["X"]) == 5
         # assert res["PREANNO"][1][0] == "O"
         # assert res["PREANNO"][1][10] == "O"
