@@ -66,9 +66,6 @@ jobs:
           echo "bumped_version=" >> $GITHUB_OUTPUT
         fi
         echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-        cat medspacy_io/version.py
-
-    # No artifact upload needed since we don't update the file here
 
   build:
     needs: get-version
@@ -140,6 +137,7 @@ jobs:
       if: needs.get-version.outputs.bumped_version != ''
       run: |
         sed -i "s/__version__ = .*/__version__ = '${{ needs.get-version.outputs.bumped_version }}'/" medspacy_io/version.py
+        cat medspacy_io/version.py
 
 
     - name: Commit and push version change
