@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   get-version:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump_version.outputs.version }}
@@ -68,6 +69,7 @@ jobs:
         echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
   build:
+    if: github.ref == 'refs/heads/main'
     needs: get-version
     runs-on: ubuntu-latest
     
@@ -90,6 +92,7 @@ jobs:
         path: dist/
 
   test-install:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -108,9 +111,9 @@ jobs:
         python -c "import medspacy_io; print('Successfully imported medspacy_io')"
 
   create-release:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.create_release
     needs: [get-version, build, test-install]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && inputs.create_release
     permissions:
       contents: write
     steps:
@@ -152,9 +155,9 @@ jobs:
     # Removed duplicate commit step
 
   publish:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish))
     needs: [build, test-install]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish)
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 
