@@ -131,6 +131,15 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Commit and push version change
+      if: success()
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add medspacy_io/version.py
+        git commit -m "Bump version to ${{ needs.get-version.outputs.version }} [skip ci]" || echo "No changes to commit"
+        git push
+
   publish:
     needs: [build, test-install]
     runs-on: ubuntu-latest
