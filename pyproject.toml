@@ -52,10 +52,12 @@ dev = [
     "flake8",
     "mypy",
     "types-lxml",
+    "medspacy"
 ]
 test = [
     "pytest>=6.0",
     "pytest-cov",
+    "medspacy"
 ]
 docs = [
     "sphinx",
