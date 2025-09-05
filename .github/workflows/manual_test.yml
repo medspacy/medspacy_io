@@ -1,4 +1,6 @@
 name: Manual Tests
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
