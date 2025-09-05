@@ -1,9 +1,9 @@
 spacy<3.9; python_version < "3.12"
-spacy>=3.8,<4.0; python_version >= "3.12"
+spacy>=3.9,<4.0; python_version >= "3.12"
 lxml>=4.4.0
 pandas>=0.10.0
-numpy~=1.18.0
 quicksectx>=0.3.8
 pyrush>=1.0.8
 setuptools>=65.5.1
 nose
+medspacy

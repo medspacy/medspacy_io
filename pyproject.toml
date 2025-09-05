@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -24,7 +24,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -53,10 +52,12 @@ dev = [
     "flake8",
     "mypy",
     "types-lxml",
+    "medspacy"
 ]
 test = [
     "pytest>=6.0",
     "pytest-cov",
+    "medspacy"
 ]
 docs = [
     "sphinx",
