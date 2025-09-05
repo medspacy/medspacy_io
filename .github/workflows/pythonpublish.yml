@@ -136,7 +136,7 @@ jobs:
     - name: Update version.py after release
       if: needs.get-version.outputs.bumped_version != ''
       run: |
-        sed -i "s/__version__ = .*/__version__ = '${{ needs.get-version.outputs.bumped_version }}'/" medspacy_io/version.py
+        sed -i "s/__version__ = .*/__version__ = \"${{ needs.get-version.outputs.bumped_version }}\"/" medspacy_io/version.py
         cat medspacy_io/version.py
 
 
