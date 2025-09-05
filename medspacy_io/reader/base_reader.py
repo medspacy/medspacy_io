@@ -48,7 +48,7 @@ class BaseDocReader(object):
         self.doc_name_depth = doc_name_depth
         self.support_overlap = support_overlap
         self.set_logger(log_level)
-        if 'store_anno_string' not in kwargs:
+        if "store_anno_string" not in kwargs:
             self.store_anno_string = False
         if not Span.has_extension("annotation_id"):
             Span.set_extension("annotation_id", default="")
@@ -103,7 +103,7 @@ class BaseDocReader(object):
         @param txt_file: the Path of a txt file
         @return: the Path of the corresponding annotation file
         """
-        return Path('')
+        return Path("")
 
     def check_file_validity(
         self, file: Union[str, Path, None], raise_error: bool = True
@@ -231,7 +231,7 @@ class BaseDocReader(object):
                 start, end, span_txt = span_tuple
             else:
                 start, end = span_tuple
-                span_txt=None
+                span_txt = None
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
             if start < doc[0].idx:
@@ -328,7 +328,7 @@ class BaseDocReader(object):
         previous_abs_end = 0
         token_right_bound = len(doc) - 1
         token_start = -1
-        token_end = -1        
+        token_end = -1
         for id, span_tuple in sorted_spans:
             # because SpaCy uses token offset instead of char offset to define Spans, we need to match them,
             # binary search is used here to speed up
@@ -408,10 +408,11 @@ class BaseDocReader(object):
                 )
                 if logger.level("DEBUG").no <= logger.level(self.log_level).no:
                     import re
+
                     if span_txt is None:
                         span_txt = ""
-                    ehost_span_text=re.sub(r"\s+", " ", span_txt)
-                    sliced_span_text=re.sub(r"\s+", " ", str(span))
+                    ehost_span_text = re.sub(r"\s+", " ", span_txt)
+                    sliced_span_text = re.sub(r"\s+", " ", str(span))
                     if ehost_span_text != sliced_span_text:
                         self.logger.debug(
                             "{}[{}:{}]\n\t{}<>\n\t{}<>".format(
@@ -483,7 +484,6 @@ class BaseDocReader(object):
         return doc
 
     def get_contents(self, txt_file: Union[str, Path, None]) -> Tuple[str, str]:
-        
         """
 
         @param txt_file: a string or Path of a text file
