@@ -54,8 +54,8 @@ jobs:
         VERSION="${{ steps.get_version.outputs.version }}"
         TAG="v$VERSION"
         if grep -qx "$TAG" release_tags.txt; then
-          # Bump patch version
-          NEW_VERSION=$(python -c "v='$VERSION'.split('.'); v[-1]=str(int(v[-1])+1); print('.'.join(v))")
+          # Universal bump: if ends with digit, increment; else, append '1'
+          NEW_VERSION=$(python -c "import re; v='$VERSION'; m=re.search(r'(\d+)$', v); print(v[:m.start()] + str(int(m.group(1))+1) if m else v+'1')")
           echo "Version $VERSION already released, bumping to $NEW_VERSION"
           # Update version in medspacy_io/version.py
           sed -i "s/__version__ = .*/__version__ = '$NEW_VERSION'/" medspacy_io/version.py
