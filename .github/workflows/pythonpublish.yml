@@ -46,7 +46,7 @@ jobs:
 
     - name: Check and bump version
       id: bump_version
-      uses: jianlins/check_bump_version@v1
+      uses: jianlins/check_bump_version@v2
       with:
         bump-type: 'patch'
         current-version: ${{ steps.get_version.outputs.version }}
