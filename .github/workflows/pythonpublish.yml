@@ -31,7 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6.0.1
     - name: Set up Python
-      uses: actions/setup-python@v6.1.0
+      uses: actions/setup-python@v6.2.0
       with:
         python-version: '3.11'
     - name: Get version from project
@@ -59,7 +59,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6.0.1
     - name: Set up Python
-      uses: actions/setup-python@v6.1.0
+      uses: actions/setup-python@v6.2.0
       with:
         python-version: '3.11'  # Use a single recent Python version for building
     - name: Install build dependencies
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Set up Python
-      uses: actions/setup-python@v6.1.0
+      uses: actions/setup-python@v6.2.0
       with:
         python-version: '3.11'
     - name: Download build artifacts
