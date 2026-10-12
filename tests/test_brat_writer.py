@@ -136,8 +136,7 @@ def test_round_trip_simple_spans_and_attribute(tmp_path):
         nlp=English(), support_overlap=True, schema_file=tmp_path / "annotation.conf"
     ).read(tmp_path / "sample.txt")
     read_spans = {
-        (span.start_char, span.end_char, span.label_)
-        for span in read_doc.spans["Food"]
+        (span.start_char, span.end_char, span.label_) for span in read_doc.spans["Food"]
     }
     assert read_spans == {
         (0, 9, "Food"),

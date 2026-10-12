@@ -11,7 +11,6 @@ from spacy.tokens.doc import Doc
 import pandas as pd
 import os, sys
 
-
 script_directory = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_directory)
 print(f"Script directory: {script_directory}")

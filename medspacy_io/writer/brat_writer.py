@@ -7,7 +7,6 @@ from typing import Iterable, Optional, Sequence, Union
 
 from spacy.tokens import Doc, Span
 
-
 _TYPE_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 _REPORT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _WINDOWS_RESERVED = {"CON", "PRN", "AUX", "NUL"} | {
@@ -65,9 +64,7 @@ class BratWriter:
                 values[name] = value
             else:
                 raise ValueError(
-                    "Attribute {!r} has unsupported BRAT value {!r}".format(
-                        name, value
-                    )
+                    "Attribute {!r} has unsupported BRAT value {!r}".format(name, value)
                 )
         return values
 
@@ -124,9 +121,7 @@ class BratWriter:
             matches = by_range.get((span.start_char, span.end_char), ())
             if len(matches) != 1:
                 message = "Unlabeled relation endpoint at {}:{} is missing or ambiguous"
-                raise ValueError(
-                    message.format(span.start_char, span.end_char)
-                )
+                raise ValueError(message.format(span.start_char, span.end_char))
             key = matches[0]
             return ids[key], key[2]
 
@@ -141,9 +136,7 @@ class BratWriter:
             target_id, target_type = endpoint_id(target)
             relation_types.add((label, source_type, target_type))
             lines.append(
-                "R{}\t{} Arg1:{} Arg2:{}".format(
-                    index, label, source_id, target_id
-                )
+                "R{}\t{} Arg1:{} Arg2:{}".format(index, label, source_id, target_id)
             )
 
         return (

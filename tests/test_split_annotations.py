@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 """Test script to verify the optimized split annotation handling"""
+
 import pytest
 import spacy
 from pathlib import Path
